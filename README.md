@@ -368,6 +368,7 @@ Worker 3: 3 messages
 ### **OUTPUT**
 
 MISAL INPUT : Halo A;10 
+
 Akan dikirim ke 3 worker.
 
 * Eksekusi Terminal 1
