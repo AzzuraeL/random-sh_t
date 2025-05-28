@@ -33,14 +33,14 @@ _One sunny morning, Budiman, an Informatics student, was assigned by his lecture
   make -j$(nproc)
   cp arch/x86/boot/bzImage ..
 
+
 - **Explanation:**
 
   `Pengerjaan sesuai dengan modul`
 
 - **Screenshot:**
+![Screenshot from 2025-05-23 11-37-00](https://github.com/user-attachments/assets/db9fe92e-c8ae-4a30-9598-06436b026e73)
 
-  `Image Folder/Soal 1 Busy Box.jpg, Soal 1 BzImage
-`
 
 ### Soal 2
 
