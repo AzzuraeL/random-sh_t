@@ -23,7 +23,13 @@ $$
 
 ```python
 def riemann_integral(a, b, n):
-    ...
+    delta_x = (b - a) / n
+    total = 0
+    for i in range(n):
+        x_riemann = a + i * delta_x 
+        total += f(x_riemann)
+    luas = total * delta_x
+    return round(luas, 2)
 ```
 
 Menghitung pendekatan integral (luas) menggunakan **Riemann** pada interval $[a, b]$ dengan `n` bagian.
@@ -38,7 +44,10 @@ Menghitung pendekatan integral (luas) menggunakan **Riemann** pada interval $[a,
 
 ```python
 def nilai_sebenarnya(a, b):
-    ...
+    def F(x):
+        return 0.5 * x**6 - (8/5) * x**5
+    hasil = F(b) - F(a)
+    return round(hasil, 2)
 ```
 
 Menghitung **nilai eksak (sebenarnya)** dari integral fungsi $f(x)$ dari `a` ke `b`.
@@ -61,7 +70,10 @@ $$
 
 ```python
 def riemann_error(a, b, n):
-    ...
+    approx = riemann_integral(a, b, n)
+    val_sebenarnya = nilai_sebenarnya(a, b)
+    error = abs((val_sebenarnya - approx)/val_sebenarnya) * 100
+    return round(approx, 2), round(val_sebenarnya, 2), round(error, 2)
 ```
 
 * Menghitung pendekatan luas dengan `riemann_integral`
