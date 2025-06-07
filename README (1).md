@@ -1,8 +1,8 @@
-Program Python ini menghitung luas di bawah kurva fungsi tertentu menggunakan metode **Riemann Sum Titik Kiri**, lalu membandingkannya dengan hasil **integral eksak** (nilai sebenarnya). Program juga menghitung **persentase error** antara hasil pendekatan dan nilai sebenarnya.
+Program Python ini menghitung luas di bawah kurva fungsi tertentu menggunakan metode **Riemann**, lalu membandingkannya dengan hasil **integral eksak** (nilai sebenarnya). Program juga menghitung **persentase error** antara hasil pendekatan dan nilai sebenarnya.
 
 ---
 
-## 🔧 Penjelasan Fungsi
+##  Penjelasan Fungsi
 
 ### `f(x)`
 
@@ -26,7 +26,7 @@ def riemann_integral(a, b, n):
     ...
 ```
 
-Menghitung pendekatan integral (luas) menggunakan **Riemann Sum Titik Kiri** pada interval $[a, b]$ dengan `n` bagian.
+Menghitung pendekatan integral (luas) menggunakan **Riemann** pada interval $[a, b]$ dengan `n` bagian.
 
 * `delta_x = (b - a) / n` → lebar tiap bagian
 * Menggunakan titik kiri tiap bagian untuk menghitung `f(x)`
@@ -76,7 +76,7 @@ $$
 
 ---
 
-## 🔢 Contoh Penggunaan
+##  Contoh Penggunaan
 
 ```python
 a = 4
@@ -90,7 +90,7 @@ n = 4
 
 ---
 
-## 🧾 Contoh Output
+##  Contoh Output
 
 ```bash
 Luas dengan Riemann (n=4): 3412884.00
@@ -104,7 +104,7 @@ Error true: 49.14
 
 ---
 
-## ℹ️ Catatan
+##  Catatan
 
 * Semakin besar `n`, semakin kecil error-nya (lebih akurat)
 * Metode ini cocok untuk memahami konsep integral numerik dasar
