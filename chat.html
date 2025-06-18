@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>desuwaa</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Carlotta : Your Wife</h1>
+
+    <form method="post">
+        <input type="text" name="user_input" placeholder="Type your message..." required>
+        <button type="submit">Send</button>
+    </form>
+
+    <div class="chat-box">
+        {% for item in chat_log %}
+            <div><strong>VERY:</strong> {{ item.user }}</div>
+            <div><strong>KITT:</strong> {{ item.bot }}</div>
+        {% endfor %}
+    </div>
+</body>
+</html>
