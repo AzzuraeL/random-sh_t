@@ -1,238 +1,190 @@
-Berikut adalah file `README.md` berisi penjelasan lengkap dan detail dari kode FUSE C yang kamu unggah. Ini termasuk cuplikan kode serta penjelasan tiap bagiannya agar mudah dipahami.
+# Drama Troll Filesystem (FUSE) — Penjelasan Implementasi
+
+Repositori ini berisi implementasi filesystem FUSE jebakan yang dirancang untuk kasus "Drama Troll". Berikut penjelasan bagaimana setiap point soal dikerjakan, fungsi mana yang berperan, dan bagaimana mekanismenya:
 
 ---
 
-# FUSE Troll Filesystem
+## **a. Pembuatan User**
 
-Sistem berkas ini adalah implementasi berbasis FUSE (`Filesystem in Userspace`) yang melakukan aksi “troll” terhadap user tertentu (`DainTontas`) saat menulis ke file `upload.txt`. Ketika troll terpicu, sistem menampilkan ASCII art dan mengubah perilaku sistem file secara permanen dengan mencatat status ke file trigger `/tmp/troll_trigger`.
+> **Soal:**  
+> Buat 3 user: DainTontas, SunnyBolt, Ryeku menggunakan `useradd` dan `passwd`.
 
-## 📁 File: troll\_fs.c
-
-### 🔧 Dependensi dan Konfigurasi Awal
-
-```c
-#define FUSE_USE_VERSION 26
-
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-#ifdef linux
-#define _XOPEN_SOURCE 700
-#endif
-```
-
-* Menentukan versi API FUSE yang digunakan.
-* Mengaktifkan header opsional jika tersedia (`config.h`).
-* Mendefinisikan makro untuk kompatibilitas POSIX (`_XOPEN_SOURCE 700`).
-
-### 📚 Header Penting
-
-```c
-#include <fuse.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <dirent.h>
-#include <errno.h>
-#include <sys/time.h>
-#include <pwd.h>
-#include <stdbool.h>
-```
-
-* Header ini digunakan untuk operasi file, direktori, akses user, dan logging.
-
-### 🐛 Debug Mode
-
-```c
-#define DEBUG 1
-#if DEBUG
-#define debug_print(fmt, ...) fprintf(stderr, "[DEBUG] " fmt "\n", ##__VA_ARGS__)
-#else
-#define debug_print(fmt, ...)
-#endif
-```
-
-* Makro `debug_print` akan aktif jika `DEBUG` diset ke 1, mencetak log ke `stderr`.
+**Cara Mengerjakan:**
+- Jalankan di terminal (sebagai root/sudo):
+  ```bash
+  sudo useradd DainTontas
+  sudo passwd DainTontas
+  sudo useradd SunnyBolt
+  sudo passwd SunnyBolt
+  sudo useradd Ryeku
+  sudo passwd Ryeku
+  ```
+- User ini akan digunakan untuk login dan menguji filesystem FUSE yang dibuat.
 
 ---
 
-## 💥 Trigger Troll dan Pemeriksaan User
+## **b. Jebakan Troll (Filesystem FUSE dengan Dua File)**
 
-```c
-static bool trap_triggered = false;
-const char *trigger_file = "/tmp/troll_trigger";
-```
+> **Soal:**  
+> Buat filesystem FUSE di `/mnt/troll` berisi hanya dua file:  
+> - `very_spicy_info.txt`  
+> - `upload.txt`  
 
-* `trap_triggered` menandakan apakah troll telah aktif.
-* Status disimpan di file trigger agar permanen di antara mount/unmount.
+**Fungsi yang Berperan:**
+- `xmp_readdir`
+- `xmp_getattr`
 
-### 👤 Pemeriksaan User
+### Penjelasan Fungsi:
+- **`xmp_readdir`**  
+  Fungsi ini akan dipanggil saat directory `/mnt/troll` dibuka (misal dengan `ls`).  
+  ```c
+  static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
+                         off_t offset, struct fuse_file_info *fi)
+  ```
+  - Mengecek jika `path` adalah root (`/`), lalu mengisi directory dengan:
+    - `.`, `..`, `very_spicy_info.txt`, dan `upload.txt`
+  - Ini memastikan hanya dua file yang terlihat di dalam mount point.
 
-```c
-static bool is_daintontas() {
-    struct fuse_context *ctx = fuse_get_context();
-    struct passwd *pw = getpwuid(ctx->uid);
-    return pw && strcmp(pw->pw_name, "DainTontas") == 0;
-}
-```
-
-* Mengecek apakah user aktif adalah `DainTontas`.
-
-### 💾 Load dan Simpan Status Troll
-
-```c
-static void loadtrap() {
-    FILE *f = fopen(trigger_file, "r");
-    trap_triggered = false;
-    if (f) {
-        int status = 0;
-        if (fscanf(f, "%d", &status) == 1) {
-            trap_triggered = (status != 0);
-        }
-        fclose(f);
-    }
-}
-
-static void savetrap() {
-    FILE *f = fopen(trigger_file, "w");
-    if (f) {
-        fprintf(f, "%d", trap_triggered);
-        fclose(f);
-    }
-}
-```
-
-* `loadtrap()` memuat status troll dari file.
-* `savetrap()` menyimpan status troll setelah dipicu.
+- **`xmp_getattr`**  
+  Fungsi ini menangani permintaan atribut file (seperti stat), sehingga file yang disebutkan di atas tampak nyata.
+  ```c
+  static int xmp_getattr(const char *path, struct stat *stbuf)
+  ```
+  - Jika `path` adalah `/`, mengembalikan atribut directory.
+  - Jika `/very_spicy_info.txt` atau `/upload.txt`, mengembalikan atribut file reguler.
 
 ---
 
-## 🎨 ASCII Art Troll
+## **c. Jebakan Troll (Isi File Berbeda untuk User Tertentu)**
 
-```c
-static const char *troll_art = "     ______     ____   ____ ...";
-```
+> **Soal:**  
+> Jika file `very_spicy_info.txt` dibuka oleh DainTontas, isinya:  
+> `Very spicy internal developer information: leaked roadmap.docx`  
+> Jika dibuka oleh user lain:  
+> `DainTontas' personal secret!!.txt`
 
-* Disimpan sebagai string besar, ditampilkan saat troll terpicu.
+**Fungsi yang Berperan:**
+- `xmp_read`
+- `is_daintontas`
 
----
+### Penjelasan Fungsi:
+- **`is_daintontas`**  
+  Fungsi helper untuk mengecek apakah user yang melakukan operasi adalah `DainTontas`.
+  ```c
+  static bool is_daintontas() {
+      struct fuse_context *ctx = fuse_get_context();
+      struct passwd *pw = getpwuid(ctx->uid);
+      return pw && strcmp(pw->pw_name, "DainTontas") == 0;
+  }
+  ```
+  - Mengambil context FUSE dan uid, lalu membandingkan dengan nama user.
 
-## 🔍 Operasi Filesystem FUSE
-
-### 📂 `getattr` — Atribut File
-
-```c
-static int xmp_getattr(const char *path, struct stat *stbuf) {
-    ...
-    if (strcmp(path, "/") == 0) {
-        stbuf->st_mode = S_IFDIR | 0777;
-        stbuf->st_nlink = 2;
-    } else if (strcmp(path, "/very_spicy_info.txt") == 0 || 
-               strcmp(path, "/upload.txt") == 0 ) {
-        stbuf->st_mode = S_IFREG | 0666;
-        stbuf->st_nlink = 1;
-        stbuf->st_size = 1024;
-    } else {
-        return -ENOENT;
-    }
-    ...
-}
-```
-
-* Menentukan atribut untuk root (`/`), `upload.txt`, dan `very_spicy_info.txt`.
-* File lainnya dianggap tidak ada.
-
-### 🔒 `access` — Izin Akses
-
-```c
-static int xmp_access(const char *path, int mask) {
-    if (strcmp(path, "/upload.txt") == 0) return 0;
-    int res = access(path, mask);
-    return res == -1 ? -errno : 0;
-}
-```
-
-* Mengizinkan akses penuh ke `upload.txt`.
-
-### 📁 `readdir` — Isi Direktori
-
-```c
-static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-                       off_t offset, struct fuse_file_info *fi) {
-    if (strcmp(path, "/") != 0)
-        return -ENOENT;
-
-    filler(buf, ".", NULL, 0);
-    filler(buf, "..", NULL, 0);
-    filler(buf, "upload.txt", NULL, 0);
-    filler(buf, "very_spicy_info.txt", NULL, 0);
-
-    return 0;
-}
-```
-
-* Menentukan isi direktori root: dua file virtual.
+- **`xmp_read`**  
+  Fungsi ini menangani operasi baca file.
+  ```c
+  static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
+                      struct fuse_file_info *fi)
+  ```
+  - Jika membaca `/very_spicy_info.txt`:
+    - Jika user adalah `DainTontas`, isi file:  
+      `Very spicy internal developer information: leaked roadmap.docx`
+    - Jika bukan, isi file:  
+      `DainTontas' personal secret!!.txt`
 
 ---
 
-## ✍️ `write` — Memicu Troll
+## **d. Trap — Trigger Perubahan Behavior via upload.txt**
 
-Dalam bagian kode lanjutan (tidak tampil semua), biasanya akan ada:
+> **Soal:**  
+> Jika DainTontas melakukan `echo "upload" > upload.txt`, maka semua file `.txt` akan menampilkan ASCII art "Fell for it again reward" untuk DainTontas. Trigger ini harus persist walau FUSE di-unmount/restart.
 
-```c
-if (strcmp(path, "/upload.txt") == 0 && is_daintontas()) {
-    if (strstr(buf, "upload")) {
-        trap_triggered = true;
-        savetrap();
-        write(STDOUT_FILENO, troll_art, strlen(troll_art));
-    }
-}
-```
+**Fungsi yang Berperan:**
+- `xmp_write`
+- `savetrap`, `loadtrap`
+- `xmp_read`
+- Variabel global: `trap_triggered` dan file `/tmp/troll_trigger`
+- ASCII art: `troll_art`
 
-* Jika `DainTontas` menulis kata "upload" ke `upload.txt`, maka:
+### Penjelasan Fungsi:
+- **`xmp_write`**  
+  Digunakan untuk mendeteksi jika `upload.txt` ditulis oleh DainTontas dengan string `"upload"`.
+  ```c
+  static int xmp_write(const char *path, const char *buf, size_t size,
+                       off_t offset, struct fuse_file_info *fi)
+  ```
+  - Jika file `/upload.txt` dan user adalah DainTontas, dan ada string "upload" yang ditulis:
+    - Set `trap_triggered = true`
+    - Panggil `savetrap()` untuk menyimpan status ke file `/tmp/troll_trigger` (persisten).
 
-  * Troll aktif.
-  * ASCII art muncul.
-  * Status troll disimpan.
+- **`savetrap`, `loadtrap`**  
+  Menyimpan/membaca status jebakan ke/dari file `/tmp/troll_trigger`.
+  - `savetrap()`: Menulis status ke file.
+  - `loadtrap()`: Membaca status dari file.
+  - File ini akan tetap ada walau FUSE di-unmount atau mesin direstart, memastikan trigger persist.
 
----
+- **`xmp_read`**  
+  Saat membaca file `.txt`, fungsi akan:
+    - Memanggil `loadtrap()`
+    - Jika `trap_triggered == true` DAN user adalah DainTontas DAN file berekstensi `.txt`:
+      - Mengembalikan **ASCII art** `troll_art` sebagai isi file apapun yang berekstensi `.txt`.
 
-## 🚀 Kompilasi dan Jalankan
-
-### Kompilasi
-
-```bash
-gcc troll_fs.c -o troll_fs `pkg-config fuse --cflags --libs`
-```
-
-### Jalankan
-
-```bash
-mkdir /mnt/troll
-./troll_fs -f -o allow_other /mnt/troll
-```
-
----
-
-## 🧪 Testing
-
-```bash
-cd /mnt/troll
-echo "upload" > upload.txt  # jika user adalah DainTontas → troll aktif
-cat very_spicy_info.txt     # hasilnya bisa berubah jika troll aktif
-```
+- **Variabel dan ASCII Art:**
+  - Variabel global `trap_triggered` menandai apakah jebakan sudah aktif.
+  - `troll_art` berisi ASCII art “Fell for it again reward”.
 
 ---
 
-## 🔐 Catatan
+## **Behavior Lain**
 
-* Troll ini hanya aktif untuk user `DainTontas`.
-* ASCII art tidak akan muncul untuk user lain.
-* Status efek troll bersifat **persisten** via file `/tmp/troll_trigger`.
+- **`xmp_unlink` & `xmp_truncate`**  
+  Hanya mengizinkan DainTontas menghapus atau truncate file `upload.txt`.
+- **`xmp_open`, `xmp_access`**  
+  Menjamin hanya file yang diizinkan bisa diakses.
 
 ---
 
-Jika kamu ingin saya tambahkan bagian `write`, `open`, `read`, dan lainnya yang belum muncul di atas, silakan beri tahu — saya akan lanjutkan dan lengkapi isi `README.md` ini.
+## **Ringkasan Alur**
+
+1. **User Creation**:  
+   Tiga user dibuat agar bisa menguji perbedaan perilaku filesystem.
+
+2. **Mount FUSE**:  
+   Compile kode, lalu mount:
+   ```bash
+   gcc -Wall trollfs.c `pkg-config fuse --cflags --libs` -o trollfs
+   sudo ./trollfs /mnt/troll
+   ```
+
+3. **Isi Directory**:  
+   Hanya ada dua file: `very_spicy_info.txt` dan `upload.txt`.
+
+4. **Isi File Dinamis**:  
+   - Jika file `very_spicy_info.txt` dibuka:
+     - DainTontas: “leaked roadmap”
+     - User lain: “DainTontas' personal secret!!.txt”
+
+5. **Trigger Jebakan**:  
+   - Jika DainTontas menulis `"upload"` ke `upload.txt`, semua file `.txt` di dalam FUSE akan menampilkan ASCII art pada setiap akses oleh DainTontas.
+   - Status trigger persist menggunakan file `/tmp/troll_trigger`.
+
+---
+
+## **Kesimpulan**
+
+Setiap behavior di soal di-handle oleh fungsi di kode C ini, dengan mekanisme deteksi user, trigger jebakan, dan isi file dinamis tergantung status trigger. FUSE memungkinkan filesystem custom seperti ini dengan logika yang fleksibel.
+
+---
+
+### **Referensi Fungsi Kunci**
+
+| Fungsi         | Soal/Behavior yang Di-handle                           |
+|----------------|--------------------------------------------------------|
+| xmp_readdir    | Menampilkan dua file di root mount                     |
+| xmp_getattr    | Menampilkan atribut file dan directory                 |
+| xmp_read       | Menampilkan isi file sesuai user & status trap         |
+| is_daintontas  | Mengecek user yang mengakses                           |
+| xmp_write      | Memicu trap jika DainTontas menulis "upload"           |
+| savetrap/loadtrap | Membuat trigger persistent di file `/tmp/troll_trigger` |
+| troll_art      | ASCII art jebakan                                      |
+
+---
