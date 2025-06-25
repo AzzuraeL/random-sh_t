@@ -1,411 +1,393 @@
-# Task 4
-## Pipip's Load Balancer
-Pipip, seorang pengembang perangkat lunak yang tengah mengerjakan proyek distribusi pesan dengan sistem load balancing, memutuskan untuk merancang sebuah sistem yang memungkinkan pesan dari client bisa disalurkan secara efisien ke beberapa worker. Dengan menggunakan komunikasi antar-proses (IPC), Pipip ingin memastikan bahwa proses pengiriman pesan berjalan mulus dan terorganisir dengan baik, melalui sistem log yang tercatat dengan rapi.
+[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/64U6r5F3)
+# MengOS
 
-### **a. Client Mengirimkan Pesan ke Load Balancer**
+Apa??? Bikin kernel lagi???? :(
 
-* Deskripsi
+[Looking for the English version?](./README-EN.md)
 
-Pipip ingin agar proses `client.c` dapat mengirimkan pesan ke `loadbalancer.c` menggunakan IPC dengan metode **shared memory**. Proses pengiriman pesan dilakukan dengan format input dari pengguna sebagai berikut:
+## Pengenalan
 
-```
-Halo A;10
-```
+Kali ini, kita akan membuat sebuah filesystem sederhana yang dapat digunakan untuk menyimpan file-file yang kita buat. Filesystem yang akan kita buat ini akan menggunakan metode penyimpanan data yang sederhana, yaitu dengan menyimpan data file ke dalam blok-blok yang telah disediakan oleh filesystem. Jika kalian sudah tidak sabar ingin langsung mengerjakan task-task yang ada, bisa search `TODO` pada workspace ini. Berikut adalah gambaran yang akan kalian kerjakan pada final praktikum kali ini.
 
-**Penjelasan:**
+- Membuat filesystem yang dapat digunakan untuk menyimpan file-file yang kita buat.
+- Melengkapi kernel untuk dapat membaca dan menulis file ke dalam filesystem yang telah kita buat.
+- Membuat shell sederhana yang dapat digunakan untuk mengakses filesystem yang telah kita buat.
 
-- `"Halo A"` adalah isi pesan yang akan dikirim.
-- `10` adalah jumlah pesan yang ingin dikirim, dalam hal ini sebanyak 10 kali pesan yang sama.
+## Pencerdasan
 
-Selain itu, setiap kali pesan dikirim, proses `client.c` harus menuliskan aktivitasnya ke dalam **`sistem.log`** dengan format:
+Penjelasan pada praktikum final akan sering menggunakan angka heksadesimal. Penggunaan angka heksadesimal ditandai dengan prefix `0x`. Jika kalian belum terbiasa dengan angka heksadesimal, kalian dapat menggunakan kalkulator yang mendukung mode heksadesimal atau menggunakan konversi angka heksadesimal ke desimal.
 
-```
-Message from client: <isi pesan>
-Message count: <jumlah pesan>
-```
+### Struktur Disk
 
-Semua pesan yang dikirimkan dari client akan diteruskan ke `loadbalancer.c` untuk diproses lebih lanjut.
+Jika kalian sudah melewati modul 4, pasti sudah tidak asing lagi dengan struktur disk yang akan kita gunakan. Disk yang kita gunakan terdiri dari beberapa blok. Selanjutnya blok akan disebut sektor. Setiap sektor memiliki ukuran 512 bytes. Sektor pertama akan digunakan sebagai boot sector, yang berisi hasil kompilasi dari `bootloader.asm`. Sektor kedua hingga sektor ke-15 akan digunakan untuk menyimpan kode teks dari kernel yang kita buat.
 
-* Untuk memenuhi apa yang diinginkan oleh Pipip maka saya membuat kode client sebagai berikut:
+Dengan melihat hasil dari modul 4, berikut adalah struktur disk yang akan kita gunakan. Dapat dilihat menggunakan aplikasi seperti `HxD` atau menggunakan perintah `hexdump` atau `xxd`.
 
-`client.c`
-```C
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/file.h>
+![struktur-disk-sektor](./assets/struktur-disk-sektor.png)
 
-typedef struct {
-    char msgs[256];
-    int jml;
-    int giliran;
-    int state;
-} shrm;
+Untuk memudahkan dalam ilustrasi selanjutnya, struktur disk akan digambarkan sebagai berikut.
 
-void system_log(const char* dat) {
-    int fd = open("sistem.log", O_WRONLY | O_APPEND | O_CREAT, 0666);
-    flock(fd, LOCK_EX);
-    write(fd, dat, strlen(dat));
-    flock(fd, LOCK_UN);
-    close(fd);
-}
+![struktur-disk-legend](./assets/struktur-disk-legend.png)
 
-int main() {
-    char input[300];
-    fgets(input, sizeof(input), stdin);
+Satu sektor akan digambarkan sebagai satu blok. Alamat sektor akan dinomori ulang dari `0x00`. Sehingga sektor pertama akan memiliki alamat `0x00`, sektor kedua akan memiliki alamat `0x01`, dan seterusnya. Satu baris akan berisi 16 sektor. Sehingga baris pertama akan berisi sektor dengan alamat `0x00` hingga `0x0F`, baris kedua akan berisi sektor dengan alamat `0x10` hingga `0x1F`, dan seterusnya.
 
-    key_t shrmkey = ftok("progfile", 1234);
+Untuk mencari alamat sektor pada isi file `floppy.img`, kita dapat mengonversi alamat sektor ke dalam alamat byte dengan cara seperti pada gambar di atas.
 
-    char *token = strtok(input, ";");
-    char msgs[256];
-    int jml;
+### Struktur Filesystem
 
-    if (token) strcpy(msgs, token);
-    token = strtok(NULL, ";");
-    if (token) jml = atoi(token);
+Filesystem yang akan dibuat akan menggunakan beberapa komponen, yaitu map, node, dan data. Map akan disimpan sebanyak 1 sektor pada sektor `0x100`. Node akan disimpan sebanyak 2 sektor pada sektor `0x101` dan `0x102`. Data akan disimpan sebanyak 1 sektor pada sektor `0x103`.
 
-    int shmid = shmget(shrmkey, sizeof(shrm), IPC_CREAT | 0666);
-    shrm* data = (shrm*)shmat(shmid, NULL, 0);
+Berikut adalah ilustrasi dari struktur filesystem yang akan kita buat.
 
-    strcpy(data->msgs, msgs);
-    data->jml = jml;
-    data->giliran = 0;
-    data->state = 0;
+![struktur-filesystem](./assets/struktur-filesystem.png)
 
-    char log[300];
-    snprintf(log, sizeof(log), "Message from client: %s\nMessage count: %d\n", msgs, jml);
-    system_log(log);
+### Struktur Filesystem Map
 
-    shmdt(data);
-    return 0;
-}
-```
-* Penjelasan
-  1. Membuat struct `shrm` sebagai tempat pertukaran data dalam shared memory
-  2. Membuat fungsi `system_log` sebagai sebuah alat untuk menuliskan pesan yang diterima dan sudah diformat kedalam `sistem.log`, ada penggunaan `flock()` demi menjaga kondisi dimana file akann di write oleh satu proses saja dan tidak ada proses yang saling tumpang tindih.
-  3. Masuk ke `main()` yang pertama dibuat adalah kode untuk meminta innput kepada user lalu membuat key untuk shared memory, lalu selanjutnya adalah memisahkan input yang diterima menjadi 2 bagian dengan strtok, bagian pertama adalah dari awal input sampai delimiter (;) pertama akan disimpan sebagai pesan yang akan diproses, sedangkan bagian kedua adalah dari setelah delimiter (;) pertama sampai akhir input yang akan disimpan sebagai jumlah pesan.
-  4. Selanjutnya yaitu membuat id shared memory dalam variable `shmid` dengan `shmget` menggunakan key shared memory yang sudah kita buat di awal.
-  5. Membuat variable data yang akan digunakan untuk menyimpan setiap data yang akan dikirim lewat shared memory dengan `shmat` (shared memory attach) menggunakan `shmid` yang dibuat sebelumnya.
-  6. Memasukkan setiap data yang diperlukan (Pesan, Jumlah Pesan, giliran diinisialisasi 0, dan state diinisialisasi 0)
-  7. Melakukan formating terhadap pesan yang dikirim menggunakan `snprintf` untuk menghindaro buffer overflow ketika pesan terlalu panjang
-  8. Memanggil fungsi `system_log` dengan passing pesan yang sudah diformat agar bisa dimasukkan ke file `sistem.log`
-  9. `shmdt` untuk melakukan detach dari shared memory.
-      
-* Problem
-  1. Sebelum penggunaan `flock` ada pesan di `sistem.log` yang aneh karena bertumpuk sebelum pesan sebelumnya selesai ditulis
+Map akan digunakan untuk menandai blok-blok pada disk yang telah digunakan oleh file. Setiap blok akan memiliki status `0x00` jika sektor yang bersangkutan belum digunakan, dan `0x01` jika sektor yang bersangkutan telah digunakan. Contohnya, karena pada sektor `0x00` telah digunakan oleh bootloader, maka isi dari map ke-0 adalah `0x01`. Komponen map akan digunakan ketika kita ingin menulis file ke dalam disk untuk mengetahui sektor mana saja yang dapat kita gunakan.
 
-### **b. Load Balancer Mendistribusikan Pesan ke Worker Secara Round-Robin**
+Berikut adalah ilustrasi dari komponen map.
 
-* Deskripsi
-  
-Setelah menerima pesan dari client, tugas `loadbalancer.c` adalah mendistribusikan pesan-pesan tersebut ke beberapa **worker** menggunakan metode **round-robin**. Sebelum mendistribusikan pesan, `loadbalancer.c` terlebih dahulu mencatat informasi ke dalam **`sistem.log`** dengan format:
+![struktur-map](./assets/struktur-map.png)
 
-```
-Received at lb: <isi pesan> (#message <indeks pesan>)
-```
+Map akan berukuran 1 sektor (512 bytes). Item ke-0 hingga item ke-15 pada map akan memiliki status `0x01` karena telah digunakan oleh sistem operasi. Item ke-16 hingga item ke-255 akan memiliki status `0x00` karena belum digunakan. Mulai dari item ke-256 (`0x100`) hingga item ke 511 (`0x1FF`) akan ditandai sebagai sektor yang telah digunakan. Hal ini dikarenakan kita tidak memperbolehkan file untuk menulis data pada sektor yang berada di atas sektor `0x100`.
 
-Contoh jika ada 10 pesan yang dikirimkan, maka output log yang dihasilkan adalah:
+### Struktur Filesystem Node
 
-```
-Received at lb: Halo A (#message 1)
-Received at lb: Halo A (#message 2)
-...
-Received at lb: Halo A (#message 10)
-```
+Node akan digunakan untuk menyimpan informasi dari file atau direktori yang kita buat. Setiap node akan memiliki ukuran 16 bytes. Sehingga, total akan terdapat 64 item node yang bisa disimpan. Berikut adalah ilustrasi dari komponen node.
 
-Setelah itu, `loadbalancer.c` akan meneruskan pesan-pesan tersebut ke **n worker** secara bergiliran (round-robin), menggunakan **IPC message queue**. Berikut adalah contoh distribusi jika jumlah worker adalah 3:
+![struktur-node](./assets/struktur-node.png)
 
-- Pesan 1 → worker1
-- Pesan 2 → worker2
-- Pesan 3 → worker3
-- Pesan 4 → worker1 (diulang dari awal)
+Berikut adalah penjelasan dari setiap item pada node.
 
-Dan seterusnya.
+- **P**: kolom pertama pada item node berguna sebagai penunjuk _parent node_ dari node yang bersangkutan dan akan bernilai `0xFF` jika parent dari node yang bersangkutan adalah _root node_.
 
-Proses `worker.c` bertugas untuk mengeksekusi pesan yang diterima dan mencatat log ke dalam file yang sama, yakni **`sistem.log`**.
+  Sebagai contoh, pada node index ke-1, nilai dari kolom pertama adalah `0x00`. Hal ini menunjukkan bahwa node index ke-1 adalah _parent node_ dari node index ke-0. Sedangkan pada node index ke-0, nilai dari kolom pertama adalah `0xFF`. Hal ini menunjukkan bahwa _parent node_ dari node index ke-0 adalah _root node_.
 
-* Untuk memenuhi apa yang diinginkan oleh Pipip maka saya membuat kode loadbalancer sebagai berikut:
+- **D**: kolom kedua pada item node berguna sebagai penunjuk index dari komponen data yang akan digunakan untuk menyimpan data file. Jika nilai dari kolom kedua adalah `0xFF`, maka node tersebut merupakan direktori.
 
-  `loadbalancer.c`
-  
-```C
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/msg.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/file.h>
-#include <sys/wait.h>
+  Sebagai contoh, pada node index ke-0, nilai dari kolom kedua adalah `0x00`. Hal tersebut berarti informasi data dari file tersebut bisa diakses pada komponen data index ke-0. Sedangkan pada node index ke-1, nilai dari kolom kedua adalah `0xFF`. Hal tersebut berarti node tersebut merupakan direktori.
 
-typedef struct {
-    char msgs[256];
-    int jml;
-    int giliran;
-    int state;
-} shrm;
+- **Node name**: kolom ketiga hingga kolom terakhir pada item node berguna sebagai nama dari node tersebut. Nama dari node akan memiliki panjang maksimal 13 karakter (karakter terakhir adalah karakter null).
 
-typedef struct {
-    long mtype;
-    char mtext[256];
-} message;
+### Struktur Filesystem Data
 
-void system_log(const char* dat) {
-    int fd = open("sistem.log", O_WRONLY | O_APPEND | O_CREAT, 0666);
-    flock(fd, LOCK_EX);
-    write(fd, dat, strlen(dat));
-    flock(fd, LOCK_UN);
-    close(fd);
-}
+Komponen data akan digunakan untuk petunjuk sektor-sektor yang digunakan untuk menyimpan data file. Setiap item data akan memiliki ukuran 16 bytes. Sehingga, total akan terdapat 32 item data yang bisa disimpan. Berikut adalah ilustrasi dari komponen data.
 
-int main(int argc, char* argv[]) {
-    if (argc != 2) return 1;
-    int max = atoi(argv[1]);
+![struktur-data](./assets/struktur-data.png)
 
-    key_t shrmkey = ftok("progfile", 1234);
-    key_t mquekey = ftok("progfile", 5678);
+Setiap kolom pada item data akan menunjukkan alamat sektor yang digunakan untuk menyimpan data file. Karena satu byte hanya dapat menunjukkan alamat sektor hingga 255 (`0xFF`), maka kita hanya dapat menyimpan alamat sektor hingga sektor `0xFF`. Oleh karena itu, item map ke-256 hingga akhir akan ditandai sebagai sektor yang telah digunakan.
 
-    int shmid = shmget(shrmkey, sizeof(shrm), 0666);
-    shrm* data = (shrm*)shmat(shmid, NULL, 0);
-    while (data->jml <= 0) sleep(1);
+### Ilustrasi Filesystem
 
-    int msgid = msgget(mquekey, IPC_CREAT | 0666);
+Berikut adalah ilustrasi dari ketiga komponen filesystem yang telah dijelaskan sebelumnya.
 
-    for (int i = 0; i < data->jml; i++) {
-        char log[300];
-        snprintf(log, sizeof(log), "Received at lb: %s (#message %d)\n", data->msgs, i + 1);
-        system_log(log);
+![filesystem-illustration](./assets/filesystem-illustration.png)
 
-        message msg;
-        msg.mtype = (i % max) + 1;
-        strcpy(msg.mtext, data->msgs);
-        msgsnd(msgid, &msg, sizeof(msg.mtext), 0);
-    }
+## Instruksi Pengerjaan
 
-    data->giliran = 1;
-    data->state = 0;
-    for (int i = 0; i < max; i++) {
-        pid_t pid1 = fork();
-        if (pid1 == 0) {
-            char arg1[30];
-            snprintf(arg1, sizeof(arg1), "%d", i + 1);
-            execl("./worker", "./worker", arg1, argv[1], NULL);
-            exit(1);
-        }
-    }
+### Task 1 - Membuat syscall readSector dan writeSector
 
-    for (int i = 0; i < max; i++) wait(NULL);
+Pada task ini, kalian diminta untuk membuat syscall `readSector` dan `writeSector` yang akan digunakan untuk membaca dari disk ke memory dan menulis dari memory ke disk.
 
-    data->state =2;
-    data->giliran = 1;
-    for (int i = 0; i < data->jml; i++) {
-        message msg;
-        msg.mtype = (i % max) + 1;
-        strcpy(msg.mtext, data->msgs);
-        msgsnd(msgid, &msg, sizeof(msg.mtext), 0);
-    }
-    for (int i = 0; i < max; i++) {
-        pid_t pid2 = fork();
-        if (pid2 == 0) {
-            char arg2[30];
-            snprintf(arg2, sizeof(arg2), "%d", i + 1);
-            execl("./worker", "./worker", arg2, argv[1], NULL);
-            exit(1);
-        }
-    }
+Berikut adalah implementasi dari `readSector` dan penjelasannya.
 
-    for (int i = 0; i < max; i++) wait(NULL);    
+```c
+void readSector(byte* buf, int sector) {
+  int ah = 0x02;                    // read sector service number
+  int al = 0x01;                    // number of sectors to read
+  int ch = div(sector, 36);         // cylinder number
+  int cl = mod(sector, 18) + 1;     // sector number
+  int dh = mod(div(sector, 18), 2); // head number
+  int dl = 0x00;                    // drive number
 
-
-    shmdt(data);
-    shmctl(shmid, IPC_RMID, NULL);
-    msgctl(msgid, IPC_RMID, NULL);
-    return 0;
+  interrupt(
+    0x13,
+    ah << 8 | al,
+    buf,
+    ch << 8 | cl,
+    dh << 8 | dl
+  );
 }
 ```
 
-* Penjelasan
-  1. Membuat struct `shrm` sebagai tempat pertukaran data dalam shared memory
-  2. Membuat struct `message` sebagai sarana pengiriman pesan secara message queue
-  3. Membuat fungsi `system_log` sebagai sebuah alat untuk menuliskan pesan yang diterima dan sudah diformat kedalam `sistem.log`, ada penggunaan `flock()` demi menjaga kondisi dimana file akann di write oleh satu proses saja dan tidak ada proses yang saling tumpang tindih.
-  4. Masuk ke `main()` yang pertama dilakukan adalah mengambil argumen di `argv[1]` sebagai max worker nantinya (jika dieksekusi dengan `./load balancer 3` maka angka 3 lah yang diambil sebagai max worker
-  5. Membuat key untuk shared memmory dan message queue serta menginisialisasi untuk attach ke shared memory yang dibuat `client.c` lalu proses akan terus sleep sampai akhirnya jumlah pesan bertambah atau sudah menerima pesan,
-  6. Ketika sudah ada pesan yang diterima barulah masuk eksekusi untuk memulai pengiriman ke setiap worker diawali dengan membuat id message queue menggunakan `msgget` dengan key yang sudah kita buat diawal.
-  7. Masuk ke dalam looping sejumlah banyak pesan. Yang pertama dilakukan dalam loop adalah mengirimkan pesan ke dalam `sistem.log` bahwa pesan telah diterima sebanyak jumlah pesan keseluruhan, lalu mengirimkan setiap pesan ke setiap worker dengan membedakan message type nya (round robin) dengan melakukan modulo terhadap urutan pesan menggunakan max worker sehingga jika workernya maximal 3 maka message typenya akan berubah ubah (123123123dst). Pesan dikirim dengan `msgsend`.
-  8. Mengubah giliran menjadi 1 untuk mulai mengirimkan pesan mulai worker 1 dan mengubah state jadi 0 untuk kondisi nanti, lalu melakukan `fork()` `exec()` dan `wait()` untuk mengeksekusi `worker.c` secara pararel namun tetap berurutan sesuai gilirannya.
-  9. Didalam `fork()` akan dilakukan eksekusi terhadap child yakni `worker.c` dengan format tertentu yakni ketika `loadbalancer.c` dieksekusi dengan `./loadbalancer 3` maka child yakni `worker.c` akan dieksekusi dengan format `./worker 1 3` , `./worker 2 3` , dan `./worker 3 3` jadi yang dikirimkan ke worker adalah id workernya dan max workernya.
-  10. Jika sudah akan kembali ke `loadbalancer.c` untuk tahap selanjutnya.
- 
-* Problem
-  1. Susahnya membuat proses `worker.c` yang pararel di `fork()` tetap dapat bergantian secara round robin ketika menerima dari `loadbalancer.c` dan menulis ke `sistem.log`
-  2. Sering terjadi core dumped karena kesalahan dalam perubahan giliran yang menyebabkan race condition.
+- Interrupt vector yang akan digunakan adalah `0x13` untuk melakukan operasi disk I/O.
 
-### **c. Worker Mencatat Pesan yang Diterima**
+- Register `ah` akan diisi dengan `0x02` yang menunjukkan operasi `read`.
 
-* Deskripsi 
+- Register `al` akan diisi dengan `0x01` yang menunjukkan jumlah sektor yang akan dibaca.
 
-Setiap worker yang menerima pesan dari `loadbalancer.c` harus mencatat pesan yang diterima ke dalam **`sistem.log`** dengan format log sebagai berikut:
+- Register `ch` dan `cl` akan diisi dengan nomor cylinder dan sector yang akan dibaca.
 
-```
-WorkerX: message received
+  Pada floppy disk, terdapat 2 head, 18 sector per track, dan 36 track per cylinder. Sehingga, nomor cylinder akan dihitung dengan membagi nomor sektor dengan 36. Sedangkan nomor sector akan dihitung dengan mengambil sisa pembagian nomor sektor dengan 18 dan ditambahkan dengan 1.
+
+- Register `dh` dan `dl` akan diisi dengan nomor head dan drive yang akan digunakan.
+
+  Pada floppy disk, terdapat 2 head. Sehingga, nomor head akan dihitung dengan membagi nomor sektor dengan 18 dan mengambil sisa pembagian dengan 2. Sedangkan nomor drive akan diisi dengan `0x00` yang menunjukkan drive pertama.
+
+Untuk `writeSector`, kalian dapat menggunakan implementasi yang sama dengan `readSector` dengan mengganti nilai register `ah` dengan `0x03` yang menunjukkan operasi `write`.
+
+### Task 2 - Implementasi fsRead
+
+Pada [`filesystem.h`](./src/filesystem.h), terdapat beberapa konstanta dan tipe data yang akan digunakan untuk membantu dalam implementasi filesystem. Kalian diminta untuk mengimplementasikan fungsi `fsRead` yang akan digunakan untuk membaca direktori atau file dari filesystem. Fungsi `fsRead` akan menerima parameter sebagai berikut.
+
+```c
+void fsRead(struct file_metadata* metadata, enum fs_return* status);
 ```
 
+- `metadata` adalah pointer ke `file_metadata` yang akan digunakan untuk menyimpan informasi dari file atau direktori yang akan dibaca.
 
-* Untuk memenuhi apa yang diinginkan oleh Pipip maka saya membuat kode loadbalancer sebagai berikut:
+  Struktur `file_metadata` akan memiliki struktur sebagai berikut.
 
-  `worker.c`
-```C
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/msg.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/file.h>
-
-typedef struct {
-    long mtype;
-    char mtext[256];
-} message;
-
-typedef struct {
-    char msgs[256];
-    int jml;
-    int giliran;
-    int state;
-} shrm;
-
-void system_log(const char* dat) {
-    int fd = open("sistem.log", O_WRONLY | O_APPEND | O_CREAT, 0666);
-    flock(fd, LOCK_EX);
-    write(fd, dat, strlen(dat));
-    flock(fd, LOCK_UN);
-    close(fd);
-}
-
-int main(int argc, char* argv[]) {
-    if (argc != 3) exit(1);
-    int id = atoi(argv[1]);
-    int max = atoi(argv[2]);
-
-    key_t mquekey = ftok("progfile", 5678);
-    int msgid = msgget(mquekey, 0666);
-    key_t shrmkey = ftok("progfile", 1234);
-    int shmid = shmget(shrmkey, sizeof(shrm), 0666);
-    shrm* data = (shrm*)shmat(shmid, NULL, 0);
-
-    message msg;
-
-    if (data->state == 0) {
-        while (msgrcv(msgid, &msg, sizeof(msg.mtext), id, IPC_NOWAIT) >= 0) {
-            while (data->giliran != id) usleep(1000);
-            char log[300];
-            snprintf(log, sizeof(log), "Worker%d: message received\n", id);
-            system_log(log);
-            usleep(100000);
-            data->giliran = (data->giliran % max) + 1;
-        }
-        
-    }if (data->state == 2) {
-        int counter = 0;
-        while (msgrcv(msgid, &msg, sizeof(msg.mtext), id, IPC_NOWAIT) >= 0) {
-            while (data->giliran != id) usleep(1000);
-            counter++;
-        }
-        char sum[300];
-        snprintf(sum, sizeof(sum), "Worker %d: %d messages\n", id, counter);
-        system_log(sum);
-        data->giliran = (data->giliran % max) + 1;
-        shmdt(data);
-        return 0;
-    }
-
-    
-}
-```
-
-* Penjelasan
-  1. Membuat struct `shrm` sebagai tempat pertukaran data dalam shared memory
-  2. Membuat struct `message` sebagai sarana pengiriman pesan secara message queue
-  3. Membuat fungsi `system_log` sebagai sebuah alat untuk menuliskan pesan yang diterima dan sudah diformat kedalam `sistem.log`, ada penggunaan `flock()` demi menjaga kondisi dimana file akann di write oleh satu proses saja dan tidak ada proses yang saling tumpang tindih.
-  4. Masuk ke `main()` yang dilakukan pertama kali adalah menerima `argv[1]` sebagai id dan menerima `argv[2]` sebagai max worker.
-  5. Melakukan inisialisasi ke message queue untuk menerima pesan dan inisialisasi ke shared memory untuk berbagi giliran dan state.
-  6. Kemudian karena dalam penerimaan pesan dari `loadbalancer.c` tadi statenya adalah 0 maka akan masuk ke kondisi yang pertama
-  7. Di dalam kondisi ini akan terjadi looping selama masih menerima pesan , didalam looping besar akan ada looping kecil untuk membuat proses sleep sementara jika idnya belum sama dengan gilirannya, karena tadi giliran di `loadbalancer.c` diinisialisasi 1 maka akan dimulai dari id 1 sampai max worker dan kembali ke 1 lagi, didalam loop yang besar ada proses penulisan format bahwa worker telah menerima pesan ke dalam `sistem.log` lalu melakukan penambahan giliran secara roung robin juga.
-  8. Lalu kembali ke `loadbalancer.c` untuk proses selanjutnya.
-
-* Problem
-  1. Susah dalam membuat giliran agar tidak saling tumpang tindih
-
-### **d. Catat Total Pesan yang Diterima Setiap Worker di Akhir Eksekusi**
-
-* Deskripsi
-
-Setelah proses selesai (semua pesan sudah diproses), setiap worker akan mencatat jumlah total pesan yang mereka terima ke bagian akhir file **`sistem.log`**.
-
-```
-Worker 1: 3 messages
-Worker 2: 4 messages
-Worker 3: 3 messages
-```
-
-* Kode untuk bagian ini adalah lanjutan dari `loadbalancer.c` dan `worker.c`
-* Penjelasam
-  1. Proses dimulai dari `loadbalancer.c` tepat setelah berhasil mengeksekusi child dalam `fork()` pertama, maka `loadbalancer.c` akan melakukan reset terhadap giliran menjadi 1 dan mengubah state menjadi 2, kemudia melakukan looping kedua untuk mengirimkan pesan tanpa format tetapi hanya untuk melakukan perhitungan jumlah.
-  2. Selanjutnya melakukan forking kedua terhadap `worker.c` untuk melakukan perhitungan jumlah.
-  3. Ketika `worker.c` dieksekusi dalam forking kedua maka ia akan masuk kedalam kondisi dimana state 2
-  4. Dalam state 2 `worker.c` akan melakukan perhitungan terhadap jumlah pesan yang diterima oleh masing masing worker secara round robin dan juga menuliskan hasilnya kedalam `sistem.log`
-  5. Setelah selesai dia akan kembali ke `loadbalancer.c` lagi untuk melakukan penghapusan semua shared memory dan message queue yang telah digunakan menggunakan `msgctl` dan `shmctl`
-
-### **OUTPUT**
-
-MISAL INPUT : Halo A;10 
-
-Akan dikirim ke 3 worker.
-
-* Eksekusi Terminal 1
+  ```c
+  struct file_metadata {
+    byte parent_index;
+    unsigned int filesize;
+    char node_name[MAX_FILENAME];
+    byte buffer[FS_MAX_SECTOR * SECTOR_SIZE];
+  };
   ```
-  ./client
-  ```
-* Eksekusi Terminal 2
-  ```
-  ./loadbalancer 3
-  ```
-* Hasil didalam `sistem.log`
+
+  - `parent_index` adalah index dari _parent node_ dari file atau direktori yang akan dibaca.
+  - `filesize` adalah ukuran dari file yang akan dibaca. `filesize` berisi 0 dalam pemanggilan fungsi `fsRead`.
+  - `node_name` adalah nama dari file atau direktori yang akan dibaca.
+  - `buffer` adalah pointer ke buffer yang akan digunakan untuk menyimpan data dari file atau direktori yang akan dibaca. `buffer` berisi `0x00` dalam pemanggilan fungsi `fsRead`.
+
+- `status` adalah pointer ke `fs_return` yang akan digunakan untuk menyimpan status dari operasi yang dilakukan.
+
+Langkah-langkah yang harus dilakukan pada fungsi `fsRead` adalah sebagai berikut.
+
+1. Membaca filesystem dari disk ke memory.
+
+2. Iterasi setiap item node untuk mencari node yang memiliki nama yang sesuai dengan `metadata->node_name` dan parent index sesuai dengan `metadata->parent_index`.
+
+3. Jika node yang dicari tidak ditemukan, maka set `status` dengan `FS_R_NODE_NOT_FOUND`.
+
+4. Jika node yang ditemukan adalah direktori, maka set `status` dengan `FS_R_TYPE_IS_DIRECTORY`.
+
+5. Jika node yang ditemukan adalah file, maka proses selanjutnya adalah sebagai berikut.
+
+   - Set `metadata->filesize` dengan 0.
+   - Lakukan iterasi i dari 0 hingga `FS_MAX_SECTOR`
+   - Jika data index ke-i dari node yang ditemukan adalah `0x00`, maka hentikan iterasi.
+   - Lakukan `readSector` untuk membaca data dari sektor yang ditunjuk oleh data pada _data index_ dengan sectors ke-i disimpan ke dalam `metadata->buffer + i * SECTOR_SIZE`.
+   - Tambahkan `SECTOR_SIZE` ke `metadata->filesize`.
+
+6. Set `status` dengan `FS_R_SUCCESS`.
+
+### Task 3 - Implementasi fsWrite
+
+Selanjutnya kalian diminta untuk mengimplementasikan fungsi `fsWrite` yang akan digunakan untuk menulis file ke dalam filesystem. Fungsi `fsWrite` akan menerima parameter yang sama dengan `fsRead` sebagai berikut.
+
+```c
+void fsWrite(struct file_metadata* metadata, enum fs_return* status);
 ```
-Message from client: Halo A
-Message count: 10
-Received at lb: Halo A (#message 1)
-Received at lb: Halo A (#message 2)
-Received at lb: Halo A (#message 3)
-Received at lb: Halo A (#message 4)
-Received at lb: Halo A (#message 5)
-Received at lb: Halo A (#message 6)
-Received at lb: Halo A (#message 7)
-Received at lb: Halo A (#message 8)
-Received at lb: Halo A (#message 9)
-Received at lb: Halo A (#message 10)
-Worker1: message received
-Worker2: message received
-Worker3: message received
-Worker1: message received
-Worker2: message received
-Worker3: message received
-Worker1: message received
-Worker2: message received
-Worker3: message received
-Worker1: message received
-Worker 1: 4 messages
-Worker 2: 3 messages
-Worker 3: 3 messages
+
+Pada fungsi `fsWrite`, `metadata` yang diterima akan berisi informasi berikut.
+
+- `parent_index` adalah index dari _parent node_ dari file yang akan ditulis. Jika `parent_index` adalah `0xFF`, maka file yang akan ditulis akan disimpan pada _root directory_.
+- `filesize` adalah ukuran dari file yang akan ditulis. Jika `filesize` adalah 0, maka file yang akan ditulis adalah direktori.
+- `node_name` adalah nama dari file yang akan ditulis.
+- `buffer` adalah pointer ke buffer yang berisi data dari file yang akan ditulis.
+
+Langkah-langkah yang harus dilakukan pada fungsi `fsWrite` adalah sebagai berikut.
+
+1. Membaca filesystem dari disk ke memory.
+
+2. Lakukan iterasi setiap item node untuk mencari node yang memiliki nama yang sama dengan `metadata->node_name` dan parent index yang sama dengan `metadata->parent_index`. Jika node yang dicari ditemukan, maka set `status` dengan `FS_R_NODE_ALREADY_EXISTS` dan keluar.
+
+3. Selanjutnya, cari node yang kosong (nama node adalah string kosong) dan simpan index-nya. Jika node yang kosong tidak ditemukan, maka set `status` dengan `FS_W_NO_FREE_NODE` dan keluar.
+
+4. Iterasi setiap item data untuk mencari data yang kosong (alamat sektor data ke-0 adalah `0x00`) dan simpan index-nya. Jika data yang kosong tidak ditemukan, maka set `status` dengan `FS_W_NO_FREE_DATA` dan keluar.
+
+5. Iterasi setiap item map dan hitung blok yang kosong (status blok adalah `0x00` atau `false`). Jika blok yang kosong kurang dari `metadata->filesize / SECTOR_SIZE`, maka set `status` dengan `FS_W_NOT_ENOUGH_SPACE` dan keluar.
+
+6. Set nama dari node yang ditemukan dengan `metadata->node_name`, parent index dengan `metadata->parent_index`, dan data index dengan index data yang kosong.
+
+7. Lakukan penulisan data dengan cara sebagai berikut.
+
+   - Buatlah variabel counter yang akan digunakan untuk menghitung jumlah sektor yang telah ditulis (akan disebut dengan j).
+
+   - Lakukan iterasi i dari 0 hingga `SECTOR_SIZE`.
+
+   - Jika item map pada index ke-i adalah `0x00`, maka tulis index i ke dalam data item sektor ke-j dan tulis data dari buffer ke dalam sektor ke-i.
+
+   - Penulisan dapat menggunakan fungsi `writeSector` dari `metadata->buffer + i * SECTOR_SIZE`.
+
+   - Tambahkan 1 ke j.
+
+8. Tulis kembali filesystem yang telah diubah ke dalam disk.
+
+9. Set `status` dengan `FS_W_SUCCESS`.
+
+### Task 4 - Implementasi printCWD
+
+Setelah berhasil mengimplementasikan fungsi `fsRead` dan `fsWrite`, selanjutnya adalah pembuatan shell sederhana. Shell akan menggunakan read-eval-print-loop (REPL) yang akan menerima perintah dari user dan mengeksekusi perintah tersebut. Pada task ini, kalian diminta untuk mengimplementasikan fungsi `printCWD` yang akan digunakan untuk menampilkan _current working directory_ (CWD) dari shell.
+
+Fungsi `printCWD` akan menerima parameter `byte cwd` yang menunjukkan node index dari _current working directory_. Fungsi akan menampilkan path dari root (`/`) hingga node yang ditunjuk oleh `cwd`. Jika `cwd` adalah `0xFF`, maka path yang ditampilkan adalah `/`. Setiap node yang ditampilkan akan dipisahkan oleh karakter `/`.
+
+### Task 5 - Implementasi parseCommand
+
+Selanjutnya, kalian diminta untuk mengimplementasikan fungsi `parseCommand` yang akan digunakan untuk memisahkan perintah yang diberikan oleh user. Fungsi `parseCommand` akan menerima parameter sebagai berikut.
+
+```c
+void parseCommand(char* buf, char* cmd, char arg[2][64]);
 ```
-THANK YOU
-  
+
+- `buf` adalah string yang berisi perintah yang diberikan oleh user.
+- `cmd` adalah string yang akan digunakan untuk menyimpan perintah yang diberikan oleh user.
+- `arg` adalah array of string yang akan digunakan untuk menyimpan argumen dari perintah yang diberikan oleh user.
+
+Karena hanya akan ada 2 argumen yang diberikan oleh user, maka `arg` akan memiliki ukuran 2. Jika argumen yang diberikan oleh user adalah 1, maka `arg[1]` akan berisi string kosong. Jika argumen yang diberikan oleh user adalah 0, maka `arg[0]` dan `arg[1]` akan berisi string kosong.
+
+### Task 6 - Implementasi cd
+
+Fungsi `cd` akan digunakan untuk mengubah _current working directory_ dari shell. Berikut adalah spesifikasi dari fungsi `cd`.
+
+- `cd <dirname>` dapat memindahkan _current working directory_ ke direktori yang berada di bawah _current working directory_.
+
+- `cd ..` akan memindahkan _current working directory_ ke _parent directory_ dari _current working directory_.
+
+- `cd /` akan memindahkan _current working directory_ ke _root directory_.
+
+- `cd` hanya dapat memindahkan _current working directory_ ke direktori, tidak dapat memindahkan _current working directory_ ke file.
+
+- Implementasi relative path dan absolute path tidak diwajibkan.
+
+### Task 7 - Implementasi ls
+
+Fungsi `ls` akan digunakan untuk menampilkan isi dari direktori. Berikut adalah spesifikasi dari fungsi `ls`.
+
+- `ls` akan menampilkan isi dari _current working directory_.
+
+- `ls .` akan menampilkan isi dari _current working directory_.
+
+- `ls <dirname>` akan menampilkan isi dari direktori yang berada di bawah _current working directory_.
+
+- `ls` hanya dapat menampilkan isi dari direktori, tidak dapat menampilkan isi dari file.
+
+- Implementasi relative path dan absolute path tidak diwajibkan.
+
+### Task 8 - Implementasi mv
+
+Fungsi `mv` akan digunakan untuk memindahkan file atau direktori. Berikut adalah spesifikasi dari fungsi `mv`.
+
+- `mv <filename> <dirname>/<outputname>` akan memindahkan file yang berada di bawah _current working directory_ ke direktori yang berada di bawah _current working directory_.
+
+- `mv <filename> /<outputname>` akan memindahkan file yang berada di bawah _current working directory_ ke direktori _root directory_.
+
+- `mv <filename> ../<outputname>` akan memindahkan file yang berada di bawah _current working directory_ ke _parent directory_ dari _current working directory_.
+
+- `mv` hanya dapat memindahkan file, tidak dapat memindahkan direktori.
+
+- Implementasi relative path dan absolute path tidak diwajibkan.
+
+### Task 9 - Implementasi cp
+
+Fungsi `cp` akan digunakan untuk menyalin file. Berikut adalah spesifikasi dari fungsi `cp`.
+
+- `cp <filename> <dirname>/<outputname>` akan menyalin file yang berada di bawah _current working directory_ ke direktori yang berada di bawah _current working directory_.
+
+- `cp <filename> /<outputname>` akan menyalin file yang berada di bawah _current working directory_ ke direktori _root directory_.
+
+- `cp <filename> ../<outputname>` akan menyalin file yang berada di bawah _current working directory_ ke _parent directory_ dari _current working directory_.
+
+- `cp` hanya dapat menyalin file, tidak dapat menyalin direktori.
+
+- Implementasi relative path dan absolute path tidak diwajibkan.
+
+### Task 10 - Implementasi cat
+
+Fungsi `cat` akan digunakan untuk menampilkan isi dari file. Berikut adalah spesifikasi dari fungsi `cat`.
+
+- `cat <filename>` akan menampilkan isi dari file yang berada di bawah _current working directory_.
+
+- Implementasi relative path dan absolute path tidak diwajibkan.
+
+### Task 11 - Implementasi mkdir
+
+Fungsi `mkdir` akan digunakan untuk membuat direktori. Berikut adalah spesifikasi dari fungsi `mkdir`.
+
+- `mkdir <dirname>` akan membuat direktori yang berada di bawah _current working directory_.
+
+## Testing
+
+Untuk melakukan testing, kalian dapat menjalankan `make build run` pada terminal untuk melakukan kompilasi dan menjalankan OS. Setelah itu tutup OS dan jalankan `make generate test=1` untuk melakukan populasi file dan direktori ke dalam filesystem (ubah nilai 1 dengan nomor test yang sesuai). Setelah itu, jalankan kembali OS dengan `make run` dan coba perintah shell yang telah kalian implementasikan.
+
+### `make generate test=1`
+
+Berikut adalah struktur filesystem yang akan digunakan pada test ini.
+
+```
+/
+├─ dir1
+│  ├─ dir1-1
+│  │  └─ dir1-1-1
+│  └─ dir1-2
+│     └─ dirname
+├─ dir2
+│  └─ dirname
+└─ dir3
+```
+
+### `make generate test=2`
+
+Berikut adalah struktur filesystem yang akan digunakan pada test ini.
+
+```
+/
+├─ file-0
+├─ dir-1
+│  └─ dir-2
+│     └─ . . .
+│        └─ dir-62
+└─ file-63
+```
+
+### `make generate test=3`
+
+Berikut adalah struktur filesystem yang akan digunakan pada test ini.
+
+```
+/
+├─ 1024
+├─ 4096
+├─ 8192_0
+├─ 8192_1
+├─ ...
+└─ 8192_13
+```
+
+### `make generate test=4`
+
+Berikut adalah struktur filesystem yang akan digunakan pada test ini.
+
+```
+/
+├─ dir1
+│  ├─ katanya
+│  ├─ dir3
+│  │  ├─ bikin
+│  │  ├─ fp
+│  │  └─ dir4
+│  ├─ dir5
+│  │  ├─ cuma
+│  │  └─ seminggu
+├─ dir2
+└─ doang
+```
+
+## Tips
+
+- Untuk debugging filesystem, kalian dapat mengecek menggunakan hexedit pada Linux atau HxD pada Windows. Dengan informasi sektor map `0x100`, node `0x101` dan `0x102`, serta data `0x103`, kalian dapat mengetahui data yang tersimpan pada filesystem. Untuk mendapatkan offset byte dari sektor, kalian dapat menggunakan rumus `offset = sektor * 512` atau `offset = sektor * 0x200`. Sebagai contoh untuk mengetahui isi dari filesystem map, dapat membuka HxD dan hexedit dengan menekan `Ctrl + G` dan memasukkan offset byte dari sektor map (`0x100 * 0x200 = 0x20000`).
+
+  ![tips-1](./assets/tips-1.png)
+
+- `bcc` tidak memberikan error checking sebanyak `gcc`. Kalian dapat menggunakan `gcc` untuk melakukan error checking pada saat kompilasi.
+
+- Dikarenakan penggunaan `bcc` dengan mode ANSI C, kalian tidak dapat mendeklarasikan variabel di tengah blok kode atau scope. Variabel harus dideklarasikan di awal blok kode atau scope.
+
+- Selalu jalankan `make` pada direktori `sisop-final-praktikum`, bukan pada subdirektori.
+
+- Sedikit sneak peek apa yang akan kalian buat.
+
+  https://github.com/user-attachments/assets/1810aa9e-2df9-4e31-a296-a9fb40755d37
