@@ -1,0 +1,830 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>USB configuration</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="Bochs User Manual"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Using Bochs"
+HREF="using-bochs.html"><LINK
+REL="PREVIOUS"
+TITLE="Using sound"
+HREF="using-sound.html"><LINK
+REL="NEXT"
+TITLE="Common problems and what to do about them (Troubleshooting)"
+HREF="common-problems.html"></HEAD
+><BODY
+CLASS="SECTION"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>Bochs User Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="using-sound.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 5. Using Bochs</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="common-problems.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECTION"
+><H1
+CLASS="SECTION"
+><A
+NAME="BOCHSOPT-USB-CONFIG"
+>5.7. USB configuration</A
+></H1
+><P
+>The USB configuration allows you to add, delete, or modify an existing USB device.</P
+><P
+>The 'device' field may contain one of the following items:</P
+><DIV
+CLASS="SECTION"
+><H2
+CLASS="SECTION"
+><A
+NAME="BOCHSOPT-USB-MOUSE"
+>5.7.1. Mouse</A
+></H2
+><P
+>By default, this emulates a 3-button mouse. After a reset, it is set up to send the <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>Report 
+Protocol</I
+></SPAN
+> report and consists of a 4-byte report:
+<PRE
+CLASS="SCREEN"
+>byte 0:  00000BBB  Bits 7:3 are zero
+                   Bit 2 is button 3
+                   Bit 1 is button 2
+                   Bit 0 is button 1
+byte 1:  XXXXXXXX  8-bit X displacement (-127 -&#62; 127)
+byte 2:  YYYYYYYY  8-bit Y displacement (-127 -&#62; 127)
+byte 3:  WWWWWWWW  8-bit Wheel displacement (-127 -&#62; 127)</PRE
+></P
+><P
+>Using the 'model:xxxx" parameter, you can set the mouse to report a different type packet. See below.</P
+><P
+>This device may be used on all Host Controller types using a speed of 'low', 'full', or 'high'. (see model 'm388phy')
+<PRE
+CLASS="SCREEN"
+>usb_uhci: enabled=1, port1=mouse, options1="speed:low"              # default report packet shown above
+usb_ohci: enabled=1, port1=mouse, options1="speed:full, model:m228" # 3-byte report packet, 2 button, 8-bits
+usb_ehci: enabled=1, port1=mouse, options1="speed:high, model:m338" # 3-byte report packet, 3 button, 8-bits
+usb_xhci: enabled=3, port3=mouse, options1="speed:full, model:m3312" # 3-byte report packet, 3 button, 12-bits</PRE
+></P
+><P
+>The model: parameter may have one of the following names: 'm228', 'm338', 'm3312', 'm3316', 'm338phy', or 'm33xDebug'.</P
+><DIV
+CLASS="SECTION"
+><H3
+CLASS="SECTION"
+><A
+NAME="AEN3483"
+>5.7.1.1. model: m228</A
+></H3
+><P
+>Returns the 4-byte packet shown below.
+<PRE
+CLASS="SCREEN"
+>byte 0:  00000001  Report ID (1)
+byte 1:  000000BB  Bits 7:2 are zero
+                   Bit 1 is button 2
+                   Bit 0 is button 1
+byte 2:  XXXXXXXX  8-bit X displacement (-128 -&#62; 127)
+byte 3:  YYYYYYYY  8-bit Y displacement (-128 -&#62; 127)</PRE
+></P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>This model uses a Report ID, and prepends this byte ID to the Report Packet. (See byte 0 above)</P
+></BLOCKQUOTE
+></DIV
+></DIV
+><DIV
+CLASS="SECTION"
+><H3
+CLASS="SECTION"
+><A
+NAME="AEN3489"
+>5.7.1.2. model: m338</A
+></H3
+><P
+>Returns the 4-byte packet shown at <A
+HREF="bochsopt-usb-config.html#BOCHSOPT-USB-MOUSE"
+>Section 5.7.1</A
+> above. This is the default model and will be used if the <B
+CLASS="COMMAND"
+>model:</B
+> parameter is not used.</P
+></DIV
+><DIV
+CLASS="SECTION"
+><H3
+CLASS="SECTION"
+><A
+NAME="AEN3494"
+>5.7.1.3. model: m338phy</A
+></H3
+><P
+>Returns the default 4-byte packet, same as <B
+CLASS="COMMAND"
+>m338</B
+>, but includes a HID Physical Descriptor and associated Designator entries.
+<DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>To make the Bochs source code simpler, this model must be used with low- and full-speed devices only.</P
+></BLOCKQUOTE
+></DIV
+>
+<DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>Note that some Guests, including (older) widely used commercial Guests, see an HID Report with Physical indicators (Designator Min/Max) as invalid and won't continue to use the mouse.</P
+></BLOCKQUOTE
+></DIV
+></P
+></DIV
+><DIV
+CLASS="SECTION"
+><H3
+CLASS="SECTION"
+><A
+NAME="AEN3502"
+>5.7.1.4. model: m3312</A
+></H3
+><P
+>Returns the 5-byte packet shown below.
+<PRE
+CLASS="SCREEN"
+>byte 0:  00000BBB  Bits 7:3 are zero
+                   Bit 2 is button 3
+                   Bit 1 is button 2
+                   Bit 0 is button 1
+byte 1:  XXXXXXXX  12-bit X displacement (-2048 -&#62; 2047)
+byte 2:  YYYYXXXX
+byte 3:  YYYYYYYY  12-bit Y displacement (-2048 -&#62; 2047)
+byte 4:  WWWWWWWW  8-bit Wheel displacement (-128 -&#62; 127)</PRE
+></P
+></DIV
+><DIV
+CLASS="SECTION"
+><H3
+CLASS="SECTION"
+><A
+NAME="AEN3506"
+>5.7.1.5. model: m3316</A
+></H3
+><P
+>Returns the 6-byte packet shown below.
+<PRE
+CLASS="SCREEN"
+>byte 0:  00000BBB  Bits 7:3 are zero
+                   Bit 2 is button 3
+                   Bit 1 is button 2
+                   Bit 0 is button 1
+byte 1:  XXXXXXXX  16-bit X displacement (-32768 -&#62; 32767)
+byte 2:  XXXXXXXX
+byte 4:  YYYYYYYY  16-bit Y displacement (-32768 -&#62; 32767)
+byte 5:  YYYYYYYY  
+byte 6:  WWWWWWWW  8-bit Wheel displacement (-128 -&#62; 127)</PRE
+></P
+></DIV
+><DIV
+CLASS="SECTION"
+><H3
+CLASS="SECTION"
+><A
+NAME="AEN3510"
+>5.7.1.6. model: m33xDebug (Debug model)</A
+></H3
+><P
+>This report is deliberately irregular by design, so that a Guest can test its HID Report Descriptor Parser.</P
+><P
+></P
+><UL
+><LI
+><P
+> - the button fields are not consecutive and are at arbitrary positions in the report.</P
+></LI
+><LI
+><P
+> - the coords fields are not byte aligned or consecutively spaced.</P
+></LI
+><LI
+><P
+> - the coords fields are of an irregular size, each a different size.</P
+></LI
+><LI
+><P
+> - there are padding fields between entries that <B
+CLASS="COMMAND"
+>do not</B
+> align the next field on a byte boundary.</P
+></LI
+><LI
+><P
+> - this also uses the push/pop mechanism to test the function of your parser.</P
+></LI
+></UL
+><P
+>Again, this is deliberate. A correctly written parser will extract the neccessary fields no matter the irregularity.</P
+><P
+>Returns the 5-byte packet shown below.</P
+><PRE
+CLASS="SCREEN"
+>byte 0:  YYYYYYY0  10-bit Y displacement (-512 -&#62; 511)
+byte 1:  WWWW0YYY  8-bit Wheel displacement (-128 -&#62; 127)
+byte 2:  0B00WWWW  bit 6 is Button #2 (right button)
+byte 3:  XXXXX0B0  9-bit X displacement, bit 1 is Button #1 (left button)
+byte 4:  0B00XXXX  bit 6 is Button #3 (middle button)</PRE
+><P
+>Please note that this model is not for normal use. It is <B
+CLASS="COMMAND"
+>intentionally</B
+> irregular, and its purpose is to test an HID Parser.</P
+></DIV
+><DIV
+CLASS="SECTION"
+><H3
+CLASS="SECTION"
+><A
+NAME="AEN3530"
+>5.7.1.7. mouse: misc</A
+></H3
+><P
+>Please note that most physical USB mice will be 'low-speed' only.</P
+></DIV
+></DIV
+><DIV
+CLASS="SECTION"
+><H2
+CLASS="SECTION"
+><A
+NAME="AEN3533"
+>5.7.2. Keyboard</A
+></H2
+><P
+>This emulates a standard keyboard. Key press and release codes are translated from
+the Host's keyboard to the Guest as USB Interrupt packets.</P
+><P
+>After a reset, it is set up to send the <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>Report Protocol</I
+></SPAN
+> report and consists of a 8-byte report:
+<PRE
+CLASS="SCREEN"
+>byte 0:  MMMMMMMM  Modifier Keys
+                    Bit 7 = Right GUI
+                    Bit 6 = Right Alt
+                    Bit 5 = Right Shift
+                    Bit 4 = Right Ctrl
+                    Bit 3 = Left GUI
+                    Bit 2 = Left Alt
+                    Bit 1 = Left Shift
+                    Bit 0 = Left Ctrl
+byte 1:  00000000  Reserved
+byte 2:  xxxxxxxx  Key Code 1
+byte 3:  xxxxxxxx  Key Code 2
+byte 4:  xxxxxxxx  Key Code 3
+byte 5:  xxxxxxxx  Key Code 4
+byte 6:  xxxxxxxx  Key Code 5
+byte 7:  xxxxxxxx  Key Code 6</PRE
+></P
+><P
+>The keyboard expects the following 'Output' packet when modifying the Num Lock, Caps Lock, and Scroll Lock states:
+<PRE
+CLASS="SCREEN"
+>byte 0:  00000LLL  Lock States
+                    Bit 2 = Scroll Lock
+                    Bit 1 = Caps Lock
+                    Bit 0 = Num Lock</PRE
+></P
+><P
+>This device may be used on all Host Controller types using a speed of 'low', 'full',
+or 'high'.
+<PRE
+CLASS="SCREEN"
+>usb_uhci: enabled=1, port1=keyboard, options1="speed:low"
+usb_ohci: enabled=1, port1=keyboard, options1="speed:full"
+usb_ehci: enabled=1, port1=keyboard, options1="speed:high"
+usb_xhci: enabled=3, port3=keyboard, options1="speed:full"</PRE
+>
+<DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>Please note that most physical USB keyboards will be 'low-speed' only.</P
+></BLOCKQUOTE
+></DIV
+></P
+></DIV
+><DIV
+CLASS="SECTION"
+><H2
+CLASS="SECTION"
+><A
+NAME="AEN3545"
+>5.7.3. Keypad</A
+></H2
+><P
+>This emulates a numeric keypad. Key press and release codes are translated from
+the Host's keyboard to the Guest as USB Interrupt packets.</P
+><P
+>Only the keys that are on a standard 104-key keyboard's keypad are returned. 
+These keys are the USB HID Usage ID's <B
+CLASS="COMMAND"
+>0x53</B
+> to <B
+CLASS="COMMAND"
+>0x63</B
+> and are handled by the USB keypad and
+are sent to the Guest via USB Interrupt packets. (see the 'Keyboard' item above for the format of this packet).</P
+><P
+>All remaining key press and release events are handled by the underlining keyboard emulation, 
+usually the AT/PS2 keyboard emulation. Therefore, the guest will still receive other keypress events.
+Only the key range noted before will be sent via the USB emulation.</P
+><P
+>This device may be used on all Host Controller types using a speed of 'low', 'full',
+or 'high'.
+<PRE
+CLASS="SCREEN"
+>usb_uhci: enabled=1, port1=keypad, options1="speed:low"
+usb_ohci: enabled=1, port1=keypad, options1="speed:full"
+usb_ehci: enabled=1, port1=keypad, options1="speed:high"
+usb_xhci: enabled=3, port3=keypad, options1="speed:full"</PRE
+>
+<DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>Please note that most physical USB keypads will be 'low-speed' only.</P
+></BLOCKQUOTE
+></DIV
+></P
+></DIV
+><DIV
+CLASS="SECTION"
+><H2
+CLASS="SECTION"
+><A
+NAME="AEN3556"
+>5.7.4. Tablet</A
+></H2
+><P
+>This emulates a 3-button mouse. After a reset, it is set up to send the Report 
+Protocol report and consists of a 6-byte report:
+<PRE
+CLASS="SCREEN"
+>byte 0:  00000BBB  Bits 7:3 are zero
+                   Bit 2 is button 3
+                   Bit 1 is button 2
+                   Bit 0 is button 1
+byte 1:  XXXXXXXX  8-bit X Displacement (low byte)
+byte 2:  XXXXXXXX  8-bit X Displacement (high byte)
+byte 3:  YYYYYYYY  8-bit Y Displacement (low byte)
+byte 4:  YYYYYYYY  8-bit Y Displacement (high byte)
+byte 5:  ZZZZZZZZ  8-bit Z Displacement</PRE
+>
+<DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>Please note that the X and Y Displacement values are absolute, not relative values.</P
+></BLOCKQUOTE
+></DIV
+>
+This device may be used on all Host Controller types using a speed of 'low', 'full',
+or 'high'.
+<PRE
+CLASS="SCREEN"
+>usb_uhci: enabled=1, port1=tablet, options1="speed:low"
+usb_ohci: enabled=1, port1=tablet, options1="speed:full"
+usb_ehci: enabled=1, port1=tablet, options1="speed:high"
+usb_xhci: enabled=3, port3=tablet, options1="speed:full"</PRE
+>
+<DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>Please note that most physical USB tablets will be 'low-speed' only.</P
+></BLOCKQUOTE
+></DIV
+></P
+></DIV
+><DIV
+CLASS="SECTION"
+><H2
+CLASS="SECTION"
+><A
+NAME="AEN3565"
+>5.7.5. Disk/CD-ROM</A
+></H2
+><P
+>This emulates a media device in the form of a hard-drive or CD-ROM. By default,
+the emulation uses the "Bulk-only" transport, also known as "Bulk/Bulk/Bulk". For
+high- and super-speed devices, you can specify the "UASP" protocol, also known as
+"USB Attached SCSI Protocol".</P
+><P
+>This device may be used on all Host Controller types using a speed of 'full', 'high',
+or 'super'.
+<PRE
+CLASS="SCREEN"
+>usb_uhci: enabled=1, port1=disk, options1="speed:full, path:hdd.img"  # defaults to the BBB protocol
+usb_ohci: enabled=1, port1=disk, options1="speed:full, path:hdd.img"
+usb_ehci: enabled=1, port1=disk, options1="speed:high, path:hdd.img"
+usb_ehci: enabled=1, port1=disk, options1="speed:high, path:hdd.img, proto:bbb"
+usb_ehci: enabled=1, port1=disk, options1="speed:high, path:hdd.img, proto:uasp"
+usb_xhci: enabled=3, port1=disk, options3="speed:full, path:hdd.img"
+usb_xhci: enabled=3, port1=disk, options3="speed:high, path:hdd.img, proto:bbb"
+usb_xhci: enabled=3, port1=disk, options3="speed:high, path:hdd.img, proto:uasp"
+usb_xhci: enabled=1, port1=disk, options1="speed:super, path:hdd.img, proto:bbb"
+usb_xhci: enabled=1, port1=disk, options1="speed:super, path:hdd.img, proto:uasp"</PRE
+>
+An image format, similar to the ATA option, can be used. Replace 'mode' below with
+the desired format.
+<PRE
+CLASS="SCREEN"
+>usb_xhci: enabled=3, port1=disk, options3="speed:high, path:<SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>mode</I
+></SPAN
+>:hdd.img, proto:bbb"
+usb_xhci: enabled=3, port1=disk, options3="speed:high, path:<SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>mode</I
+></SPAN
+>:hdd.img, proto:uasp"</PRE
+>
+To emuate a CD-ROM, replace 'disk' in the examples above with 'cdrom', and adjust
+the 'path' accordingly.
+<DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>Specifying 'proto:uasp' does not guarantee that the Guest will use that protocol.
+See a <A
+HREF="bochsrc.html#BOCHSOPT-USB-UHCI"
+>previous section</A
+> for more information.</P
+></BLOCKQUOTE
+></DIV
+>
+<DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>Please note that this device is not allowed as a low-speed only device. Low-speed should be specified.</P
+></BLOCKQUOTE
+></DIV
+></P
+></DIV
+><DIV
+CLASS="SECTION"
+><H2
+CLASS="SECTION"
+><A
+NAME="AEN3578"
+>5.7.6. Floppy</A
+></H2
+><P
+>This emulates a media device in the form of an external Floppy drive. By default,
+the emulation uses the "Control/Bulk/Interrupt" transport, aka "CBI". Bochs can be
+re-compiled to use the "Control/Bulk" transport, aka "CB".</P
+><P
+>This device may be used on all Host Controller types using a speed of 'full'.
+<PRE
+CLASS="SCREEN"
+>usb_uhci: enabled=1, port1=floppy, options1="speed:full, path:floppy.img"
+usb_ohci: enabled=1, port1=floppy, options1="speed:full, path:floppy.img, model:teac"
+usb_ehci: enabled=1, port1=floppy, options1="speed:full, path:floppy.img, model:teac"
+usb_xhci: enabled=1, port3=floppy, options3="speed:full, path:floppy.img"</PRE
+>
+An image format, similar to the ATA option, can be used. Replace 'mode' below with
+the desired format.
+<PRE
+CLASS="SCREEN"
+>usb_uhci: enabled=1, port1=floppy, options1="speed:full, path:<SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>mode</I
+></SPAN
+>:floppy.img"</PRE
+>
+The 'model:teac' option can be used to emulate that specific model, else a default
+model will be used. If a guest does not see the attached floppy, try specifying the 'teac'
+model.
+<DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>Please note that this device is a full-speed only device. No other speed should be specified.</P
+></BLOCKQUOTE
+></DIV
+></P
+></DIV
+><DIV
+CLASS="SECTION"
+><H2
+CLASS="SECTION"
+><A
+NAME="AEN3587"
+>5.7.7. Printer</A
+></H2
+><P
+>This emulates a simple USB printer. All data sent to the printer will be appended
+to a specified file on the Host.</P
+><P
+>This device may be used on all Host Controller types using a speed of 'full'.
+<PRE
+CLASS="SCREEN"
+>usb_uhci: enabled=1, port1=printer, options1="speed:full, file:printdata.bin"
+usb_ohci: enabled=1, port1=printer, options1="speed:full, file:printdata.bin"
+usb_ehci: enabled=1, port1=printer, options1="speed:full, file:printdata.bin"
+usb_xhci: enabled=1, port3=printer, options3="speed:full, file:printdata.bin"</PRE
+>
+<DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>Please note that this device is a full-speed only device. No other speed should be specified.</P
+></BLOCKQUOTE
+></DIV
+></P
+></DIV
+><DIV
+CLASS="SECTION"
+><H2
+CLASS="SECTION"
+><A
+NAME="AEN3594"
+>5.7.8. Hub</A
+></H2
+><P
+>This emulates a full-speed 4-port external hub. The number of ports can be
+changed, with a range of 2 to 8.</P
+><P
+>This device may be used on all Host Controller types using a speed of 'full'.
+<PRE
+CLASS="SCREEN"
+>usb_uhci: enabled=1, port1=hub, options1="speed:full"
+usb_ohci: enabled=1, port1=hub, options1="speed:full, ports:4"
+usb_ehci: enabled=1, port1=hub, options1="speed:full, ports:6"
+usb_xhci: enabled=1, port1=hub, options1="speed:full, ports:8"</PRE
+>
+At startup, no device is attached to this hub. However, after start up, using the 
+runtime interface, a device can be attached to any or all of the ports.</P
+><P
+>Any device attached to this hub (via the runtime interface), must be the same as or less than the hub's current speed (which is currently only full-speed). Any device plugged into a hub, no matter its max speed, can only function at or below the speed of the hub it is attached to.</P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>Please note that this device is a full-speed only device. No other speed should be specified.</P
+></BLOCKQUOTE
+></DIV
+></DIV
+><DIV
+CLASS="SECTION"
+><H2
+CLASS="SECTION"
+><A
+NAME="AEN3602"
+>5.7.9. Packet Capture</A
+></H2
+><P
+>All devices may use the 'pcap' option to send all data to a Packet Capture formatted
+file.
+<PRE
+CLASS="SCREEN"
+>usb_uhci: enabled=1, port1=hub, options1="speed:full, pcap:outfile.pcap"</PRE
+>
+This file is formatted to be used with Linux' usbmon and utilities such as 
+<A
+HREF="http://www.wireshark.org/"
+TARGET="_top"
+>Wire Shark</A
+>.</P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>Please note that this option will not capture any data that would normally <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>flow through</I
+></SPAN
+> an external hub, so if you use the 'pcap' option for a hub,
+as with the example above, only the hub's data is captured, not the device(s) attached
+to it.</P
+></BLOCKQUOTE
+></DIV
+></DIV
+><DIV
+CLASS="SECTION"
+><H2
+CLASS="SECTION"
+><A
+NAME="AEN3610"
+>5.7.10. Signaling an Over-Current event</A
+></H2
+><P
+>During emulation, using the runtime configuration, you can signal an over-current
+event on any device using the 'over-current' checkbox (GUI) or text configuration
+option. This will signal an over-current event on the Host Controller for that
+port.</P
+><P
+>Over-current is considered undefined on the UHCI, though Intel 430TX and later 
+controllers may have implemented over-current via two previously unused bits.</P
+></DIV
+><DIV
+CLASS="SECTION"
+><H2
+CLASS="SECTION"
+><A
+NAME="AEN3614"
+>5.7.11. Notes</A
+></H2
+><P
+></P
+><UL
+><LI
+><P
+>All devices allow the 'debug' option to be used. This turns on the BX_DEBUG() logging
+for that device.
+<PRE
+CLASS="SCREEN"
+>usb_uhci: enabled=1, port1=hub, options1="speed:full, debug"</PRE
+></P
+></LI
+><LI
+><P
+>You can wrap options in double-quotes in your bochsrc file. However, the runtime config
+interface has problems when double-quotes are used. Therefore, don't use them in the
+runtime configuration interface.</P
+></LI
+></UL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="using-sound.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="common-problems.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Using sound</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="using-bochs.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Common problems and what to do about them (Troubleshooting)</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

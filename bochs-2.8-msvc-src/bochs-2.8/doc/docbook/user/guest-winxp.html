@@ -1,0 +1,175 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Windows XP</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="Bochs User Manual"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Guest operating systems"
+HREF="guests.html"><LINK
+REL="PREVIOUS"
+TITLE="Windows 2000 / Windows 2000 Server"
+HREF="guest-win2k.html"><LINK
+REL="NEXT"
+TITLE="Windows 7"
+HREF="guest-win7.html"></HEAD
+><BODY
+CLASS="SECTION"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>Bochs User Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="guest-win2k.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 10. Guest operating systems</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="guest-win7.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECTION"
+><H1
+CLASS="SECTION"
+><A
+NAME="GUEST-WINXP"
+>10.8. Windows XP</A
+></H1
+><P
+>Contributed by Benjamin David Lunt</P
+><P
+>Please read the message regarding software licenses in
+<A
+HREF="thirdparty.html"
+>Section 1.6</A
+> before you install Windows XP as a guest operating system in Bochs.</P
+><P
+>Windows XP has been reported to install from the CD-ROM, and run inside Bochs.
+Here are a few settings that seem to work well when running on a Windows10 host, running at 3.0Ghz.
+<PRE
+CLASS="SCREEN"
+>romimage: file=D:/path/to/your/bios/BIOS-bochs-latest
+cpu: model=broadwell_ult
+cpu: count=1, ips=75000000, reset_on_triple_fault=1, ignore_bad_msrs=1
+cpu: cpuid_limit_winnt=0
+clock: sync=realtime, time0=local
+memory: guest=512, host=512
+vgaromimage: file=D:/path/to/your/bios/VGABIOS-lgpl-latest-cirrus
+vga: extension=cirrus, update_freq=5
+pci: enabled=1, chipset=i440fx, slot1=cirrus</PRE
+>
+A known issue is to set the IPS value to less than 10,000,000 (minus the commas). WinXP doesn't
+run well at an IPS setting less than 10Mips.</P
+><P
+>Also don't set it to more than 250,000,000. Anything faster and WinXP seems to stall within the CPU loop function. WinXP seems to work well with an IPS setting of 75,000,000 on a 3.0Ghz host.</P
+><P
+>The 64-bit version of WinXP needs Bochs compiled with ACPI support even though you only set to one CPU.</P
+><P
+>For some reason, writing to a USB disk in WinXP, where the write takes a little while, WinXP will think it is an error since it didn't complete fast enough, displaying the error.  I don't know why.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="guest-win2k.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="guest-win7.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Windows 2000 / Windows 2000 Server</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="guests.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Windows 7</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

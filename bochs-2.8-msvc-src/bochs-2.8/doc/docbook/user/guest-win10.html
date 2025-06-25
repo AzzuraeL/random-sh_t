@@ -1,0 +1,184 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Windows 10</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="Bochs User Manual"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Guest operating systems"
+HREF="guests.html"><LINK
+REL="PREVIOUS"
+TITLE="Windows 8"
+HREF="guest-win8.html"><LINK
+REL="NEXT"
+TITLE="SCO OpenServer 5.0.5"
+HREF="guest-osr5.html"></HEAD
+><BODY
+CLASS="SECTION"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>Bochs User Manual</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="guest-win8.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 10. Guest operating systems</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="guest-osr5.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECTION"
+><H1
+CLASS="SECTION"
+><A
+NAME="GUEST-WIN10"
+>10.11. Windows 10</A
+></H1
+><P
+>Contributed by Benjamin David Lunt</P
+><P
+>Please read the message regarding software licenses in
+<A
+HREF="thirdparty.html"
+>Section 1.6</A
+> before you install Windows 10 as a guest operating system in Bochs.</P
+><P
+>Windows 10 has been reported to install from the CD-ROM, and run inside Bochs, though a few hacks where used to do so. For more information, see <A
+HREF="https://sourceforge.net/p/bochs/discussion/39592/thread/4f526dc9/"
+TARGET="_top"
+>this thread</A
+>.</P
+><P
+>I used another emulator to successfully install Windows 10. Then using Bochs, after a considerable amount of time and a few reboots, I finally got Win10 to boot and load in Bochs.</P
+><P
+>Here are the settings I used when running on a Windows10 host, running at 3.0Ghz.
+<PRE
+CLASS="SCREEN"
+>romimage: file=D:/path/to/your/bios/BIOS-bochs-latest
+cpu: model=corei7_sandy_bridge_2600k
+cpu: count=1, ips=325000000, reset_on_triple_fault=1, ignore_bad_msrs=1
+cpu: cpuid_limit_winnt=0
+clock: sync=realtime, time0=local
+memory: guest=2048, host=2048
+vgaromimage: file=D:/path/to/your/bios/VGABIOS-lgpl-latest-cirrus
+vga: extension=cirrus, update_freq=5
+pci: enabled=1, chipset=i440fx, slot1=cirrus</PRE
+></P
+><DIV
+CLASS="NOTE"
+><BLOCKQUOTE
+CLASS="NOTE"
+><P
+><B
+>Note: </B
+>If you use an IPS value less than 325,000,000, Win10 will BSOD and want you to reboot (Assuming a host at 3.0Ghz).</P
+></BLOCKQUOTE
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="guest-win8.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="guest-osr5.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Windows 8</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="guests.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>SCO OpenServer 5.0.5</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>
