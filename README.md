@@ -1812,7 +1812,7 @@ ORM (Object-Relational Mapping) dalam konteks Go adalah sebuah teknik yang memun
 
 Model didefinisikan menggunakan struct biasa. Struct ini dapat berisi field dengan tipe dasar Go, pointer atau alias dari tipe itu, atau bahkan tipe custom, selama tetap mengimplementasikan Scanner dan Valuer interface dari database/sql package. Perhatikan contoh model User dibawah ini:
 
-```
+```go
 type User struct {
   ID           uint           // Standard field for the primary key
   Name         string         // A regular string field
@@ -1842,7 +1842,7 @@ Dalam model ini:
 
 1. **Primary Key**: GORM menggunakan field bernama ID sebagai primary key default untuk setiap model.
 
-```
+```go
 type User struct {
   ID   string // field named `ID` used as a primary field by default
   Name string
@@ -1850,7 +1850,7 @@ type User struct {
 ```
 Namun, bisa juga menggunakan nama selain ‘ID’ dengan cara menambahkan tag “primaryKey” seperti berikut
 
-```
+```go
 // Set field `UUID` as primary field
 type Animal struct {
   ID     int64
@@ -1861,7 +1861,7 @@ type Animal struct {
 ```
 2. **Table Names**: Secara default, GORM akan mengubah nama dari sebuah struct menjadi style  snake_case. Sebagai contoh nama struct User akan menjadi users di dalam database, dan nama seperti  GormUserName akan menjadi  gorm_user_names. Namun, hal ini juga bisa dilakukan secara manual jika kita ingin dengan menggunakan Tabler interface, seperti berikut
 
-```
+```go
 type Tabler interface {
   TableName() string
 }
@@ -1874,31 +1874,27 @@ func (User) TableName() string {
 TableName ini tidak mengizinkan pengubahan nama secara dynamic, hasilnya hanya berupa cache yang akan digunakan di masa depan, jika ingin dynamic bisa menggunakan [Scope](https://gorm.io/docs/conventions.html). GORM mengizinkan user untuk membuat nama custom menggunakan NamingStrategy, yang digunakan seperti TableName, ColumnName, JoinTableName, RelationshipFKName, CheckerName, IndexName.
 
 3. **Column Names**: GORM juga secara otomatis mengubah nama field menjadi style snake_case untuk nama kolom di database. Kita bisa melakukan kustomisasi nama menggunakan NamingStrategy maupun menggunakan tag seperti dibawah ini
-
-`type`` ``Animal`` ``struct`` {`
-
-`  AnimalID ``int64``     ``<code>gorm:"column:beast``_id"</code>        `
-
-`  Birthday ``time``.``Time`` ``<code>gorm:"column:day_of_the_be``ast"</code> `
-
-`  Age      ``int64``     ``<code>gorm:"column:age_of_the_be``ast"</code> `
-
+```go
+type Animal struct {
+  AnimalID int64     <code>gorm:"column:beast_id"</code>        
+  Birthday time.Time <code>gorm:"column:day_of_the_beast"</code> 
+  Age      int64     <code>gorm:"column:age_of_the_beast"</code> 
+}
 ```
-}
 **Timestamp Fields**: GORM menggunakan field bernama CreatedAt dan UpdatedAt untuk mendeteksi secara otomatis kapan terjadinya creation dan update di dalam records. Timestamps otomatis ini juga dapat dimatikan jika kita menginginkannya menggunakan tag seperti dibawah ini 
+```go
+type User struct{
 
-`type`` ``User`` ``struct`` {`
-
-`  CreatedAt ``time``.``Time`` ```gorm:"autoCreateTime:false"``
-
+  CreatedAt time.Time gorm:"autoCreateTime:false"
 }
+```
 Syntax diatas juga berlaku untuk UpdateAt. Dengan mengikuti konvensi ini kita dapat mengurangi jumlah konfigurasi atau kode yang harus kita buat.
 
 5.3.2 gorm.Model
 
 GORM menyediakan sebuah struktur bawaan bernama gorm.Model yang sudah mencakup field (kolom) yang umum digunakan:
 
-```
+```go
 // definisi gorm.Model
 type Model struct {
   ID        uint           `gorm:"primaryKey"`
@@ -1909,7 +1905,7 @@ type Model struct {
 ```
 Kamu bisa langsung menyisipkan gorm.Model ke dalam struct milikmu agar field-field tersebut otomatis tersedia. Contoh cara penyisipan adalah
 
-```
+```go
 type Author struct {
     Name  string
     Email string
@@ -1942,12 +1938,11 @@ Cara diatas dapat diterapkan juga untuk gorm.Model cukup sisipkan “gorm.Model�
 
 # 5.4 Koneksi ke Database
 
-```
 GORM secara resmi mendukung beberapa basis data seperti MySQL, PostgreSQL, GaussDB, SQLite, SQL Server, TiDB. Dibawah ini contoh cara koneksi ke beberapa database
 
-1. MySQL
+## 1. MySQL
 
-```
+```go
 import (
     "gorm.io/driver/mysql"
     "gorm.io/gorm"
@@ -1962,7 +1957,7 @@ func main() {
 ```
 Untuk menangani time.Time dengan benar, kamu **perlu menambahkan parameter **parseTime. Jika ingin UTF-8 full encoding kite perlu ubah charset=utf8 menjadi charset=utf8mb4. Lihat artikel terkait untuk penjelasan lengkap. Driver MySQL juga menyediakan beberapa pengaturan lanjutan saat inisialisasi, contoh:
 
-```
+```go
 db, err := gorm.Open(mysql.New(mysql.Config{
   DSN: "gorm:gorm@tcp(127.0.0.1:3306)/gorm?charset=utf8&parseTime=True&loc=Local", // data source name
   DefaultStringSize: 256, // default size for string fields
@@ -1975,7 +1970,7 @@ db, err := gorm.Open(mysql.New(mysql.Config{
 
 GORM juga memungkinkan kamu untuk menggunakan driver MySQL kustom dengan opsi DriverName, misalnya:
 
-```
+```go
 import (
   _ "example.com/my_mysql_driver"
   "gorm.io/driver/mysql"
@@ -1989,7 +1984,7 @@ db, err := gorm.Open(mysql.New(mysql.Config{
 ```
 Jika kamu sudah punya koneksi *sql.DB sebelumnya, GORM bisa langsung menggunakan koneksi tersebut:
 
-```
+```go
 import (
   "database/sql"
   "gorm.io/driver/mysql"
@@ -2001,9 +1996,9 @@ gormDB, err := gorm.Open(mysql.New(mysql.Config{
   Conn: sqlDB,
 }), &gorm.Config{})
 ```
-2. PostgreSQL
+## 2. PostgreSQL
 
-```
+```go
 import (
   "gorm.io/driver/postgres"
   "gorm.io/gorm"
@@ -2014,7 +2009,7 @@ db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 ```
 Secara default, GORM menggunakan pgx sebagai driver PostgreSQL, yang mendukung cache prepared statement. Jika ingin menonaktifkan fitur ini:
 
-```
+```go
 db, err := gorm.Open(postgres.New(postgres.Config{
   DSN: "user=gorm password=gorm dbname=gorm port=9920 sslmode=disable TimeZone=Asia/Shanghai",
   PreferSimpleProtocol: true,
@@ -2022,7 +2017,7 @@ db, err := gorm.Open(postgres.New(postgres.Config{
 ```
 Kamu juga bisa menggunakan driver khusus untuk PostgreSQL, misalnya yang disediakan oleh Google Cloud:
 
-```
+```go
 import (
   _ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
   "gorm.io/gorm"
@@ -2035,7 +2030,7 @@ db, err := gorm.Open(postgres.New(postgres.Config{
 ```
 Koneksi Database yang Sudah Ada seperti berikut
 
-```
+```go
 import (
   "database/sql"
   "gorm.io/driver/postgres"
@@ -2047,9 +2042,9 @@ gormDB, err := gorm.Open(postgres.New(postgres.Config{
   Conn: sqlDB,
 }), &gorm.Config{})
 ```
-3. GaussDB
+# 3. GaussDB
 
-```
+```go
 import (
   "gorm.io/driver/gaussdb"
   "gorm.io/gorm"
@@ -2060,7 +2055,7 @@ db, err := gorm.Open(gaussdb.Open(dsn), &gorm.Config{})
 ```
 GORM menggunakan gaussdb-go sebagai driver GaussDB dan secara default mengaktifkan cache prepared statement. Kamu bisa menonaktifkannya seperti ini:
 
-```
+```go
 db, err := gorm.Open(gaussdb.New(gaussdb.Config{
   DSN: "user=gorm password=gorm dbname=gorm port=8000 sslmode=disable TimeZone=Asia/Shanghai",
   PreferSimpleProtocol: true,
@@ -2068,7 +2063,7 @@ db, err := gorm.Open(gaussdb.New(gaussdb.Config{
 ```
 Contoh driver yang dikustomisasi seperti dibawah ini
 
-```
+```go
 import (
   _ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/gaussdb"
   "gorm.io/gorm"
@@ -2082,7 +2077,7 @@ db, err := gorm.Open(gaussdb.New(gaussdb.Config{
  \
 Koneksi ke database yang sudah ada dapat dilakukan seperti berikut
 
-```
+```go
 import (
   "database/sql"
   "gorm.io/driver/gaussdb"
@@ -2100,7 +2095,7 @@ Selengkapnya dapat kamu pelajari di dokumentasi resmi [GORM](https://gorm.io/doc
 
 ## A.CREATE
 
-1. Create Record
+### 1. Create Record
 
 #### a. Generic API
 
@@ -2127,7 +2122,7 @@ user.ID             // mengembalikan primary key dari data yang dimasukkan
 result.Error        // mengembalikan error
 result.RowsAffected // jumlah record yang dimasukkan
 ```
-2. Membuat Banyak Record (Batch Create)
+### 2. Membuat Banyak Record (Batch Create)
 
 ```
 users := []*User{
@@ -2142,27 +2137,23 @@ result.RowsAffected // jumlah record yang dimasukkan
 ```
 Anda tidak bisa mengirim struct langsung ke Create, jadi pastikan untuk mengirim pointer ke data.
 
-3. Membuat Record dengan Field Tertentu
+### 3. Membuat Record dengan Field Tertentu
 
-1. Hanya Memilih Field Tertentu
-
-`db.``Select``(``"Name"``, ``"Age"``, ``"CreatedAt"``).``Create``(``&``user)`
-
+#### 1. Hanya Memilih Field Tertentu
+```go
+db.Select("Name", "Age", "CreatedAt").Create(&user)
+// INSERT INTO users (name,age,created_at) VALUES ("jinzhu", 18, "2020-07-04 11:05:21.775")
 ```
-// INSERT INTO <code>users</code> (<code>name</code>,<code>age</code>,<code>created_at</code>) VALUES ("jinzhu", 18, "2020-07-04 11:05:21.775")
+#### 2. Melewati Field Tertentu (Omit)
+```go
+db.Omit("Name", "Age", "CreatedAt").Create(&user)
+// INSERT INTO users (birthday,updated_at) VALUES ("2020-01-01 00:00:00.000", "2020-07-04 11:05:21.775")
 ```
-2. Melewati Field Tertentu (Omit)
-
-`db.``Omit``(``"Name"``, ``"Age"``, ``"CreatedAt"``).``Create``(``&``user)`
-
-```
-// INSERT INTO <code>users</code> (<code>birthday</code>,<code>updated_at</code>) VALUES ("2020-01-01 00:00:00.000", "2020-07-04 11:05:21.775")
-```
-4. Batch Insert (Masukkan Banyak Data Sekaligus)
+### 4. Batch Insert (Masukkan Banyak Data Sekaligus)
 
 Untuk memasukkan banyak data secara efisien, kirimkan slice ke metode Create. GORM akan membuat satu pernyataan SQL untuk semua data dan mengisi kembali nilai primary key. Metode hook juga akan dipanggil. Transaksi akan digunakan jika data dipecah dalam beberapa batch.
 
-```
+```go
 var users = []User{{Name: "jinzhu1"}, {Name: "jinzhu2"}, {Name: "jinzhu3"}}
 db.Create(&users)
 
@@ -2172,17 +2163,17 @@ for _, user := range users {
 ```
 Ukuran Batch juga bisa ditentukan dengan
 
-```
+```go
 var users = []User{{Name: "jinzhu_1"}, ..., {Name: "jinzhu_10000"}}
 
 // ukuran batch: 100
 db.CreateInBatches(users, 100)
 ```
-5. Create Hooks (Fungsi yang Dipanggil Otomatis Sebelum/Sesudah Create)
+### 5. Create Hooks (Fungsi yang Dipanggil Otomatis Sebelum/Sesudah Create)
 
 GORM mendukung hook yang bisa Anda definisikan sendiri seperti: BeforeSave, BeforeCreate, AfterSave, AfterCreate. Fungsi-fungsi ini akan dipanggil saat membuat record.
 
-```
+```go
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
   u.UUID = uuid.New()
 
@@ -2193,18 +2184,17 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 }
 ```
 Jika kamu ingin **melewati hook**, gunakan SkipHooks:
+```go
+DB.Session(&gorm.Session{SkipHooks: true}).Create(&user)
+DB.Session(&gorm.Session{SkipHooks: true}).Create(&users)
+DB.Session(&gorm.Session{SkipHooks: true}).CreateInBatches(users, 100)
+```
 
-`DB.``Session``(``&``gorm``.``Session``{SkipHooks: ``true``}).``Create``(``&``user)`
-
-`DB.``Session``(``&``gorm``.``Session``{SkipHooks: ``true``}).``Create``(``&``users)`
-
-`DB.``Session``(``&``gorm``.``Session``{SkipHooks: ``true``}).``CreateInBatches``(users, ``100``)`
-
-6. Membuat dari Map (Create from Map)
+### 6. Membuat dari Map (Create from Map)
 
 GORM mendukung pembuatan dari map[string]interface{} atau []map[string]interface{}{}.
 
-```
+```go
 db.Model(&User{}).Create(map[string]interface{}{
   "Name": "jinzhu", "Age": 18,
 })
@@ -2215,26 +2205,23 @@ db.Model(&User{}).Create([]map[string]interface{}{
   {"Name": "jinzhu_2", "Age": 20},
 })
 ```
-7. Create From SQL Expression/Context Valuer
+### 7. Create From SQL Expression/Context Valuer
 
 GORM juga memungkinkan membuat data dari ekspresi SQL, melalui map[string]interface{} atau tipe data yang dikustomisasi (customized data types)
-
-`db.``Model``(``&``User``{}).``Create``(``map``[``string``]``interface``{}{`
-
-`  ``"Name"``: gorm.``Expr``(``"UPPER(?)"``, ``"jinzhu"``),`
-
-```
+```go
+`db.Model(&User{}).Create(map[string]interface{}{
+  "Name": gorm.Expr("UPPER(?)", "jinzhu"),
 })
 ```
 ## B.QUERY
 
-1. Mengambil Satu Data
+### 1. Mengambil Satu Data
 
 GORM menyediakan metode seperti First, Take, dan Last untuk mengambil satu objek dari database. Ketiganya akan otomatis menambahkan kondisi LIMIT 1 pada query, dan akan menghasilkan error ErrRecordNotFound jika tidak ditemukan data.
 
-1. Generic API
+#### 1. Generic API
 
-```
+```go
 ctx := context.Background()
 
 user, err := gorm.G[User](db).First(ctx) // ambil data pertama berdasarkan primary key (biasanya id ASC)
@@ -2243,9 +2230,9 @@ user, err := gorm.G[User](db).Last(ctx)  // ambil data terakhir berdasarkan prim
 
 errors.Is(err, gorm.ErrRecordNotFound) // cek apakah error-nya karena tidak ada data
 ```
-2. **Traditional API**
+#### 2. **Traditional API**
 
-```
+```go
 db.First(&user)
 db.Take(&user)
 db.Last(&user)
@@ -2256,13 +2243,13 @@ result.Error        // error (jika ada)
 ```
 Jika ingin menghindari error ErrRecordNotFound, bisa gunakan Find dengan Limit(1), tapi perlu diingat Find akan tetap mengembalikan slice atau struct yang diisi meskipun tidak ditemukan (tanpa error).
 
-2. Mengambil Berdasarkan Primary Key
+### 2. Mengambil Berdasarkan Primary Key
 
 Bisa menggunakan nilai langsung atau kondisi Where, baik angka maupun string:
 
-1. Generic API
+#### 1. Generic API
 
-```
+```go
 ctx := context.Background()
 
 // Using numeric primary key
@@ -2281,32 +2268,31 @@ users, err := gorm.G[User](db).Where("id IN ?", []int{1,2,3}).Find(ctx)
 user, err := gorm.G[User](db).Where("id = ?", "1b74413f-f3b8-409f-ac47-e8c062e3472a").First(ctx)
 // SELECT * FROM users WHERE id = "1b74413f-f3b8-409f-ac47-e8c062e3472a";
 ```
-2. Traditional API
+#### 2. Traditional API
 
 
-```
+```go
 db.First(&user, 10)                          // ambil user dengan id 10
 db.First(&user, "10")                        // sama saja, karena string tetap di-cast ke angka
 db.Find(&users, []int{1, 2, 3})              // ambil banyak user dengan id 1, 2, dan 3
 db.First(&user, "id = ?", "uuid-value")      // jika primary key berupa string seperti UUID
 ```
 Jika struct sudah punya nilai ID, maka saat First dipanggil, GORM akan otomatis pakai nilai tersebut.
-
-`user ``:=`` ``User``{ID: ``10``}`
-
-`db.``First``(``&``user) ``// SELECT * FROM users WHERE id = 10`
-
+```go
+user := User{ID: 10}
+db.First(&user) // SELECT * FROM users WHERE id = 10
+```
 Jika model punya field DeletedAt, GORM akan otomatis menambahkan filter deleted_at IS NULL.
 
-3. Mengambil Semua Data
-
-`db.``Find``(``&``users) ``// ambil semua data dari tabel users`
-
-4. String Conditions
+### 3. Mengambil Semua Data
+```go
+db.Find(&users) // ambil semua data dari tabel users
+```
+### 4. String Conditions
 
 Contoh penggunaan kondisi umum:
 
-```
+```go
 db.Where("name = ?", "jinzhu").First(&user)
 db.Where("name IN ?", []string{"a", "b"}).Find(&users)
 db.Where("name LIKE ?", "%jin%").Find(&users)
@@ -2314,53 +2300,47 @@ db.Where("age BETWEEN ? AND ?", 20, 30).Find(&users)
 ```
 Kalau kamu mengisi primary key (ID) di struct user, maka .Where() tidak akan override, tapi malah jadi tambahan kondisi. Contoh:
 
-```
+```go
 user := User{ID: 10}
 db.Where("id = ?", 20).First(&user)
 // Query jadi: WHERE id = 10 AND id = 20
 // Tidak akan ketemu (karena id tidak bisa 10 dan 20 sekaligus)
 ```
-5. Struct & Map Conditions
+### 5. Struct & Map Conditions
 
-1. Struct
-
-`db.``Where``(``&``User``{Name: ``"jinzhu"``, Age: ``20``}).``First``(``&``user)`
-
-```
+#### 1. Struct
+```go
+db.Where(&User{Name: "jinzhu", Age: 20}).First(&user)
 // SELECT * FROM users WHERE name = 'jinzhu' AND age = 20
 ```
-2. Map
-
-`db.``Where``(``map``[``string``]``interface``{}{``"name"``: ``"jinzhu"``, ``"age"``: ``20``}).``Find``(``&``users)`
-
-```
+#### 2. Map
+```go
+db.Where(map[string]interface{}{"name": "jinzhu", "age": 20}).Find(&users)
 // SELECT * FROM users WHERE name = 'jinzhu' AND age = 20
 ```
-3. Slice of ID
+#### 3. Slice of ID
+```go
+db.Where([]int64{20, 21, 22}).Find(&users)
 
-`db.``Where``([]``int64``{``20``, ``21``, ``22``}).``Find``(``&``users)`
-
-```
 // SELECT * FROM users WHERE id IN (20, 21, 22)
 Kalau pakai struct, field kosong seperti 0, "", false tidak dianggap sebagai kondisi.
 
-`db.``Where``(``&``User``{Name: ``"jinzhu"``, Age: ``0``}).``Find``(``&``users)`
+db.Where(&User{Name: "jinzhu", Age: 0}).Find(&users)
 
 // SELECT * FROM users WHERE name = "jinzhu";  (Age = 0 tidak dipakai)
 ```
-6. Specify Struct Fields
+### 6. Specify Struct Fields
+```go
+db.Where(&User{Name: "jinzhu"}, "name", "Age").Find(&users)
 
-`db.``Where``(``&``User``{Name: ``"jinzhu"``}, ``"name"``, ``"Age"``).``Find``(``&``users)`
-
-```
 // SELECT * FROM users WHERE name = "jinzhu" AND age = 0
-`db.``Where``(``&``User``{Name: ``"jinzhu"``}, ``"Age"``).``Find``(``&``users)`
+db.Where(&User{Name: "jinzhu"}, "Age").Find(&users)
 
 // SELECT * FROM users WHERE age = 0
 ```
-7. Inline Condition (kondisi langsung dalam fungsi Find/First)
+### 7. Inline Condition (kondisi langsung dalam fungsi Find/First)
 
-```
+```go
 db.First(&user, "id = ?", "abc-uuid")
 // SELECT * FROM users WHERE id = 'abc-uuid'
 
@@ -2373,9 +2353,9 @@ db.Find(&users, User{Age: 20})
 db.Find(&users, map[string]interface{}{"age": 20})
 // SELECT * FROM users WHERE age = 20
 ```
-8. Not Condition (kondisi pengecualian)
+### 8. Not Condition (kondisi pengecualian)
 
-```
+```go
 // NOT string
 db.Not("name = ?", "jinzhu").First(&user)
 // SELECT * FROM users WHERE NOT name = 'jinzhu' LIMIT 1
@@ -2392,9 +2372,9 @@ db.Not(User{Name: "jinzhu", Age: 18}).First(&user)
 db.Not([]int64{1, 2, 3}).First(&user)
 // SELECT * FROM users WHERE id NOT IN (1,2,3) LIMIT 1
 ```
-9. Or Condition
+### 9. Or Condition
 
-```
+```go
 db.Where("role = ?", "admin").Or("role = ?", "super_admin").Find(&users)
 // SELECT * FROM users WHERE role = 'admin' OR role = 'super_admin'
 
@@ -2404,9 +2384,9 @@ db.Where("name = 'jinzhu'").Or(User{Name: "jinzhu 2", Age: 18}).Find(&users)
 db.Where("name = 'jinzhu'").Or(map[string]interface{}{"name": "jinzhu 2", "age": 18}).Find(&users)
 // SELECT * FROM users WHERE name = 'jinzhu' OR (name = 'jinzhu 2' AND age = 18)
 ```
-10. Selecting Specific Fields
+### 10. Selecting Specific Fields
 
-```
+```go
 db.Select("name", "age").Find(&users)
 // SELECT name, age FROM users;
 
@@ -2416,7 +2396,7 @@ db.Select([]string{"name", "age"}).Find(&users)
 db.Table("users").Select("COALESCE(age,?)", 42).Rows()
 // SELECT COALESCE(age,'42') FROM users;
 ```
-11. Order
+### 11. Order
 
 ```
 db.Order("age desc, name").Find(&users)
@@ -2432,13 +2412,13 @@ db.Clauses(clause.OrderBy{
 }).Find(&User{})
 // SELECT * FROM users ORDER BY FIELD(id,1,2,3)
 ```
-12. Limit & Offset
+### 12. Limit & Offset
 
 **Limit** menentukan jumlah maksimum data yang akan diambil.
 
 **Offset** menentukan jumlah data yang akan dilewati sebelum mulai mengambil data.
 
-```
+```go
 db.Limit(3).Find(&users)
 // SELECT * FROM users LIMIT 3;
 
@@ -2458,9 +2438,9 @@ db.Offset(10).Find(&users1).Offset(-1).Find(&users2)
 // SELECT * FROM users OFFSET 10; (users1)
 // SELECT * FROM users; (users2)
 ```
-13. Group By & Having
+### 13. Group By & Having
 
-```
+```go
 type result struct {
   Date  time.Time
   Total int
@@ -2489,13 +2469,13 @@ type Result struct {
 }
 db.Table("orders").Select("date(created_at) as date, sum(amount) as total").Group("date(created_at)").Having("sum(amount) > ?", 100).Scan(&results)
 ```
-14. Distinct
-
-`db.``Distinct``(``"name"``, ``"age"``).``Order``(``"name, age desc"``).``Find``(``&``results)`
-
-15. Join
-
+### 14. Distinct
+```go
+db.Distinct("name", "age").Order("name, age desc").Find(&results)
 ```
+### 15. Join
+
+```go
 type result struct {
   Name  string
   Email string
@@ -2514,9 +2494,9 @@ db.Table("users").Select("users.name, emails.email").Joins("left join emails on 
 // multiple joins with parameter
 db.Joins("JOIN emails ON emails.user_id = users.id AND emails.email = ?", "jinzhu@example.org").Joins("JOIN credit_cards ON credit_cards.user_id = users.id").Where("credit_cards.number = ?", "411111111111").Find(&user)
 ```
-16. Scan
+### 16. Scan
 
-```
+```go
 type Result struct {
   Name string
   Age  int
@@ -2530,11 +2510,11 @@ db.Raw("SELECT name, age FROM users WHERE name = ?", "Antonio").Scan(&result)
 ```
 ## C.UPDATE
 
-1. Save All Data
+### 1. Save All Data
 
-1. Traditional API
+#### 1. Traditional API
 
-```
+```go
 db.First(&user)
 
 user.Name = "jinzhu 2"
@@ -2550,11 +2530,11 @@ If the value has a primary key, it first executes Update (all fields, by Select(
 
 If rows affected = 0 after Update, it automatically falls back to Create.
 
-2. Update SIngle Column
+### 2. Update SIngle Column
 
-1. Generic API
+#### 1. Generic API
 
-```
+```go
 ctx := context.Background()
 // Update with conditions
 err := gorm.G[User](db).Where("active = ?", true).Update(ctx, "name", "hello")
@@ -2568,9 +2548,9 @@ err := gorm.G[User](db).Where("id = ?", 111).Update(ctx, "name", "hello")
 err := gorm.G[User](db).Where("id = ? AND active = ?", 111, true).Update(ctx, "name", "hello")
 // UPDATE users SET name='hello', updated_at='2013-11-17 21:34:10' WHERE id=111 AND active=true;
 ```
-2. Traditional API
+#### 2. Traditional API
 
-```
+```go
 // Update with conditions
 db.Model(&User{}).Where("active = ?", true).Update("name", "hello")
 // UPDATE users SET name='hello', updated_at='2013-11-17 21:34:10' WHERE active=true;
@@ -2583,11 +2563,11 @@ db.Model(&user).Update("name", "hello")
 db.Model(&user).Where("active = ?", true).Update("name", "hello")
 // UPDATE users SET name='hello', updated_at='2013-11-17 21:34:10' WHERE id=111 AND active=true;
 ```
-3. Update Multiple Column
+### 3. Update Multiple Column
 
-1. Generic API
+#### 1. Generic API
 
-```
+```go
 ctx := context.Background()
 
 // Update attributes with `struct`, will only update non-zero fields
@@ -2598,9 +2578,9 @@ err := gorm.G[User](db).Where("id = ?", 111).Updates(ctx, User{Name: "hello", Ag
 err := gorm.G[User](db).Where("id = ?", 111).Updates(ctx, map[string]interface{}{"name": "hello", "age": 18, "active": false})
 // UPDATE users SET name='hello', age=18, active=false, updated_at='2013-11-17 21:34:10' WHERE id=111;
 ```
-2. Traditional API
+#### 2. Traditional API
 
-```
+```go
 // Update attributes with `struct`, will only update non-zero fields
 db.Model(&user).Updates(User{Name: "hello", Age: 18, Active: false})
 // UPDATE users SET name='hello', age=18, updated_at = '2013-11-17 21:34:10' WHERE id = 111;
@@ -2609,11 +2589,11 @@ db.Model(&user).Updates(User{Name: "hello", Age: 18, Active: false})
 db.Model(&user).Updates(map[string]interface{}{"name": "hello", "age": 18, "active": false})
 // UPDATE users SET name='hello', age=18, active=false, updated_at='2013-11-17 21:34:10' WHERE id=111;
 ```
-4. Update Selected Field
+### 4. Update Selected Field
 
-1. Generic API
+#### 1. Generic API
 
-```
+```go
 ctx := context.Background()
 
 // Select with Map
@@ -2633,9 +2613,9 @@ err := gorm.G[User](db).Where("id = ?", 111).Select("*").Updates(ctx, User{Name:
 // Select all fields but omit Role (select all fields include zero value fields)
 err := gorm.G[User](db).Where("id = ?", 111).Select("*").Omit("Role").Updates(ctx, User{Name: "jinzhu", Role: "admin", Age: 0})
 ```
-2. Traditional API
+#### 2. Traditional API
 
-```
+```go
 // Select with Map
 // User's ID is `111`:
 db.Model(&user).Select("name").Updates(map[string]interface{}{"name": "hello", "age": 18, "active": false})
@@ -2654,9 +2634,9 @@ db.Model(&user).Select("*").Updates(User{Name: "jinzhu", Role: "admin", Age: 0})
 // Select all fields but omit Role (select all fields include zero value fields)
 db.Model(&user).Select("*").Omit("Role").Updates(User{Name: "jinzhu", Role: "admin", Age: 0})
 ```
-5. Update Hooks
+### 5. Update Hooks
 
-```
+```go
 func (u *User) BeforeUpdate(tx *gorm.DB) (err error) {
  if u.Role == "admin" {
    return errors.New("admin user not allowed to update")
@@ -2664,9 +2644,9 @@ func (u *User) BeforeUpdate(tx *gorm.DB) (err error) {
  return
 }
 ```
-6. Batch Update
+### 6. Batch Update
 
-```
+```go
 // Update with struct
 db.Model(User{}).Where("role = ?", "admin").Updates(User{Name: "hello", Age: 18})
 // UPDATE users SET name='hello', age=18 WHERE role = 'admin';
@@ -2675,12 +2655,9 @@ db.Model(User{}).Where("role = ?", "admin").Updates(User{Name: "hello", Age: 18}
 db.Table("users").Where("id IN ?", []int{10, 11}).Updates(map[string]interface{}{"name": "hello", "age": 18})
 // UPDATE users SET name='hello', age=18 WHERE id IN (10, 11);
 ```
-7. Block Global Update
+### 7. Block Global Update
 
-|
-|
-
-```
+```go
 db.Model(&User{}).Update("name", "jinzhu").Error // gorm.ErrMissingWhereClause
 
 db.Model(&User{}).Where("1 = 1").Update("name", "jinzhu")
@@ -2692,9 +2669,9 @@ db.Exec("UPDATE users SET name = ?", "jinzhu")
 db.Session(&gorm.Session{AllowGlobalUpdate: true}).Model(&User{}).Update("name", "jinzhu")
 // UPDATE users SET `name` = "jinzhu"
 ```
-8. Update Record Count
+### 8. Update Record Count
 
-```
+```go
 // Get updated records count with `RowsAffected`
 result := db.Model(User{}).Where("role = ?", "admin").Updates(User{Name: "hello", Age: 18})
 // UPDATE users SET name='hello', age=18 WHERE role = 'admin';
@@ -2715,16 +2692,16 @@ err := gorm.G[Email](db).Where("id = ? AND name = ?", 10, "jinzhu").Delete(ctx)
 ```
 ## D.DELETE
 
-1. Delete Record
+### 1. Delete Record
 
-1. Generic API
+#### 1. Generic API
 
 |
 |
 
-2. Traditional API
+#### 2. Traditional API
 
-```
+```go
 // Email's ID is `10`
 db.Delete(&email)
 // DELETE from emails where id = 10;
@@ -2733,9 +2710,9 @@ db.Delete(&email)
 db.Where("name = ?", "jinzhu").Delete(&email)
 // DELETE from emails where id = 10 AND name = "jinzhu";
 ```
-2. Delete With Primary Key
+### 2. Delete With Primary Key
 
-```
+```go
 db.Delete(&User{}, 10)
 // DELETE FROM users WHERE id = 10;
 
@@ -2745,9 +2722,9 @@ db.Delete(&User{}, "10")
 db.Delete(&users, []int{1,2,3})
 // DELETE FROM users WHERE id IN (1,2,3);
 ```
-3. Delete Hooks
+### 3. Delete Hooks
 
-```
+```go
 func (u *User) BeforeDelete(tx *gorm.DB) (err error) {
  if u.Role == "admin" {
    return errors.New("admin user not allowed to delete")
@@ -2755,21 +2732,21 @@ func (u *User) BeforeDelete(tx *gorm.DB) (err error) {
  return
 }
 ```
-4. Batch Delete
+### 4. Batch Delete
 
-1. Generic API
+#### 1. Generic API
 
 
-```
+```go
 ctx := context.Background()
 
 // Batch delete with conditions
 err := gorm.G[Email](db).Where("email LIKE ?", "%jinzhu%").Delete(ctx)
 // DELETE from emails where email LIKE "%jinzhu%";
 ```
-2. Traditional API
+#### 2. Traditional API
 
-```
+```go
 db.Where("email LIKE ?", "%jinzhu%").Delete(&Email{})
 // DELETE from emails where email LIKE "%jinzhu%";
 
@@ -2780,7 +2757,7 @@ db.Delete(&Email{}, "email LIKE ?", "%jinzhu%")
 **ATAU**
 
 
-```
+```go
 var users = []User{{ID: 1}, {ID: 2}, {ID: 3}}
 db.Delete(&users)
 // DELETE FROM users WHERE id IN (1,2,3);
@@ -2788,11 +2765,11 @@ db.Delete(&users)
 db.Delete(&users, "name LIKE ?", "%jinzhu%")
 // DELETE FROM users WHERE name LIKE "%jinzhu%" AND id IN (1,2,3);
 ```
-5. Block Global Delete
+### 5. Block Global Delete
 
-1. Generic API
+#### 1. Generic API
 
-```
+```go
 ctx := context.Background()
 // These will return error
 err := gorm.G[User](db).Delete(ctx) // gorm.ErrMissingWhereClause
@@ -2800,9 +2777,9 @@ err := gorm.G[User](db).Delete(ctx) // gorm.ErrMissingWhereClause
 err := gorm.G[User](db).Where("1 = 1").Delete(ctx)
 // DELETE FROM `users` WHERE 1=1
 ```
-2. Traditional API
+#### 2. Traditional API
 
-```
+```go
 db.Delete(&User{}).Error // gorm.ErrMissingWhereClause
 db.Delete(&[]User{{Name: "jinzhu1"}, {Name: "jinzhu2"}}).Error // gorm.ErrMissingWhereClause
 db.Where("1 = 1").Delete(&User{})
@@ -2812,9 +2789,9 @@ db.Exec("DELETE FROM users")
 db.Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&User{})
 // DELETE FROM users
 ```
-6. Returning Data From Deleted Rows
+### 6. Returning Data From Deleted Rows
 
-```
+```go
 // return all columns
 var users []User
 DB.Clauses(clause.Returning{}).Where("role = ?", "admin").Delete(&users)
@@ -2826,23 +2803,22 @@ DB.Clauses(clause.Returning{Columns: []clause.Column{{Name: "name"}, {Name: "sal
 // DELETE FROM `users` WHERE role = "admin" RETURNING `name`, `salary`
 // users => []User{{ID: 0, Name: "jinzhu", Role: "", Salary: 100}, {ID: 0, Name: "jinzhu.2", Role: "", Salary: 1000}}
 ```
-7. Soft Delete
+### 7. Soft Delete
 
 **	**Sempat disinggung pada pembahasa model yakni di gorm.Model
 
-1. Find Soft Deleted Records
+#### 1. Find Soft Deleted Records
 
-```
+```go
 db.Unscoped().Where("age = 20").Find(&users)
 // SELECT * FROM users WHERE age = 20;
 ```
-2. Delete Permanently
+#### 2. Delete Permanently
 
-```
+```go
 db.Unscoped().Delete(&order)
 // DELETE FROM orders WHERE id=10;
 ```
-# 
 
 # 5.6 Assosiasi (has one, has many, many to many)
 
@@ -2852,9 +2828,9 @@ Asosiasi Has One menetapkan hubungan satu-ke-satu dengan model lain, tetapi deng
 
 Contoh: jika aplikasi kamu memiliki entitas *User* dan *CreditCard*, dan setiap pengguna hanya bisa memiliki satu kartu kredit.
 
-1. Declaration
+### 1. Declaration
 
-```
+```go
 // User has one CreditCard, UserID is the foreign key
 type User struct {
  gorm.Model
@@ -2867,9 +2843,9 @@ type CreditCard struct {
  UserID uint
 }
 ```
-2. Retrieve
+### 2. Retrieve
 
-```
+```go
 // Retrieve user list with eager loading credit card
 func GetAll(db *gorm.DB) ([]User, error) {
  var users []User
@@ -2877,7 +2853,7 @@ func GetAll(db *gorm.DB) ([]User, error) {
  return users, err
 }
 ```
-3. Menimpa Foreign Key
+### 3. Menimpa Foreign Key
 
 Untuk hubungan has one, kolom foreign key harus ada, dan entitas pemilik akan menyimpan primary key dari model yang dimilikinya ke dalam kolom ini.
 
@@ -2887,7 +2863,7 @@ Ketika kamu memberikan kartu kredit ke pengguna, maka ID dari pengguna akan disi
 
 Jika kamu ingin menggunakan kolom lain sebagai foreign key, kamu bisa mengubahnya dengan tag foreignKey, contohnya:
 
-```
+```go
 type User struct {
  gorm.Model
  CreditCard CreditCard `gorm:"foreignKey:UserName"`
@@ -2900,11 +2876,11 @@ type CreditCard struct {
  UserName string
 }
 ```
-4. Menimpa Referensi
+### 4. Menimpa Referensi
 
 Secara default, entitas yang dimiliki akan menyimpan primary key dari model yang memilikinya ke dalam foreign key. Kamu bisa mengubahnya agar menyimpan nilai dari kolom lain, seperti menggunakan Name pada contoh berikut:
 
-```
+```go
 type User struct {
  gorm.Model
  Name       string     `gorm:"index"`
@@ -2917,11 +2893,11 @@ type CreditCard struct {
  UserName string
 }
 ```
-5. FOREIGN KEY Constrain
+### 5. FOREIGN KEY Constrain
 
 Kamu bisa mengatur batasan **OnUpdate** dan **OnDelete** menggunakan tag constraint. Ini akan diterapkan saat melakukan migrasi dengan GORM, contohnya:
 
-```
+```go
 type User struct {
   gorm.Model
   CreditCard CreditCard `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
@@ -2937,9 +2913,9 @@ type CreditCard struct {
 
 Has Many adalah asosiasi yang menetapkan hubungan satu-ke-banyak dengan model lain. Berbeda dengan Has One, pemiliknya bisa memiliki nol atau banyak instance dari model terkait. Misalnya, jika aplikasi Anda memiliki entitas *User* dan *CreditCard*, dan setiap *User* bisa memiliki banyak *CreditCard*.
 
-1. Declare
+### 1. Declare
 
-```
+```go
 // User has many CreditCards, UserID is the foreign key
 type User struct {
   gorm.Model
@@ -2951,9 +2927,9 @@ type CreditCard struct {
   UserID uint
 }
 ```
-2. Retrieve
+### 2. Retrieve
 
-```
+```go
 // Retrieve user list with eager loading credit cards
 func GetAll(db *gorm.DB) ([]User, error) {
    var users []User
@@ -2961,13 +2937,13 @@ func GetAll(db *gorm.DB) ([]User, error) {
    return users, err
 }
 ```
-3. Override Foreign Key
+### 3. Override Foreign Key
 
 Untuk mendefinisikan hubungan **has many**, sebuah *foreign key* harus ada. Secara default, nama *foreign key* adalah gabungan dari nama tipe pemilik dan nama primary key-nya. Sebagai contoh, untuk mendefinisikan model yang *belongs to* User, maka foreign key-nya adalah UserID.
 
 Jika ingin menggunakan field lain sebagai *foreign key*, Anda bisa menyesuaikannya dengan tag foreignKey, contohnya:
 
-```
+```go
 type User struct {
  gorm.Model
  CreditCards []CreditCard `gorm:"foreignKey:UserRefer"`
@@ -2979,13 +2955,13 @@ type CreditCard struct {
  UserRefer uint
 }
 ```
-4. Override References
+### 4. Override References
 
 Secara default, GORM menggunakan primary key dari pemilik sebagai nilai dari foreign key. Pada contoh di atas, GORM akan menyimpan User.ID ke field UserID milik CreditCard.
 
 Namun, Anda bisa menggantinya dengan tag references, contohnya:
 
-```
+```go
 type User struct {
   gorm.Model
   MemberNumber string
@@ -2998,9 +2974,9 @@ type CreditCard struct {
   UserNumber string
 }
 ```
-5. FOREIGN KEY Constrain
+### 5. FOREIGN KEY Constrain
 
-```
+```go
 type User struct {
   gorm.Model
   CreditCards []CreditCard `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
@@ -3018,7 +2994,7 @@ Relasi **many to many** (banyak ke banyak) menambahkan *join table* (tabel pengh
 
 Contoh: jika aplikasi kamu memiliki users dan languages, di mana satu user bisa berbicara banyak bahasa, dan satu bahasa bisa digunakan oleh banyak user:
 
-```
+```go
 // User memiliki banyak Language melalui tabel user_languages
 type User struct {
   gorm.Model
@@ -3032,9 +3008,9 @@ type Language struct {
 ```
 Saat menggunakan AutoMigrate, GORM akan secara otomatis membuat tabel user_languages sebagai *join table*.
 
-1. Back_Reference Declare
+### 1. Back_Reference Declare
 
-```
+```go
 type User struct {
   gorm.Model
   Languages []*Language `gorm:"many2many:user_languages;"`
@@ -3046,9 +3022,9 @@ type Language struct {
   Users []*User `gorm:"many2many:user_languages;"`
 }
 ```
-2. Back_Reference Retrieve
+### 2. Back_Reference Retrieve
 
-```
+```go
 // Retrieve user list with eager loading languages
 func GetAllUsers(db *gorm.DB) ([]User, error) {
  var users []User
@@ -3063,9 +3039,9 @@ func GetAllLanguages(db *gorm.DB) ([]Language, error) {
  return languages, err
 }
 ```
-3. Override Foreign Key
+### 3. Override Foreign Key
 
-```
+```go
 type User struct {
   gorm.Model
   Profiles []Profile `gorm:"many2many:user_profiles;foreignKey:Refer;joinForeignKey:UserReferID;References:UserRefer;joinReferences:ProfileRefer"`
@@ -3078,17 +3054,17 @@ type Profile struct {
   UserRefer uint `gorm:"index:,unique"`
 }
 ```
-4. Self-Referential
+### 4. Self-Referential
 
-```
+```go
 type User struct {
   gorm.Model
   Friends []*User `gorm:"many2many:user_friends"`
 }
 ```
-5. FOREIGN KEY Constrain
+### 5. FOREIGN KEY Constrain
 
-```
+```go
 type User struct {
   gorm.Model
   Languages []Language `gorm:"many2many:user_speaks;"`
@@ -3099,11 +3075,11 @@ type Language struct {
   Name string
 }
 ```
-6. Composite Foreign Key
+### 6. Composite Foreign Key
 
 Jika kamu menggunakan **primary key gabungan** (lebih dari satu kolom), GORM akan secara otomatis membuat foreign key gabungan. Contoh:
 
-```
+```go
 type Tag struct {
   ID 	uint   `gorm:"primaryKey"`
   Locale string `gorm:"primaryKey"`
@@ -3126,7 +3102,7 @@ type Blog struct {
 
 AutoMigrate akan membuat tabel, foreign key yang hilang, constraints, kolom, dan index. Ini akan mengubah tipe kolom yang sudah ada jika ukuran atau presisinya berubah, atau jika berubah dari non-nullable menjadi nullable. TIDAK akan menghapus kolom yang tidak digunakan untuk melindungi data kamu.
 
-```
+```go
 db.AutoMigrate(&User{})
 
 db.AutoMigrate(&User{}, &Product{}, &Order{})
@@ -3136,7 +3112,7 @@ db.Set("gorm:table_options", "ENGINE=InnoDB").AutoMigrate(&User{})
 ```
 AutoMigrate akan membuat foreign key constraint secara otomatis. Kamu bisa menonaktifkan fitur ini saat inisialisasi:
 
-```
+```go
 db, err := gorm.Open(sqlite.Open("gorm.db"), &gorm.Config{
  DisableForeignKeyConstraintWhenMigrating: true,
 })
@@ -3145,7 +3121,7 @@ db, err := gorm.Open(sqlite.Open("gorm.db"), &gorm.Config{
 
 GORM menyediakan **interface migrator**, yang berisi API terpadu untuk setiap jenis database, yang bisa digunakan untuk membuat migrasi lintas-database, contohnya: SQLite tidak mendukung ALTER COLUMN, DROP COLUMN. GORM akan membuat tabel baru, menyalin data, menghapus tabel lama, lalu mengganti nama tabel baru. MySQL juga tidak mendukung rename kolom/index pada beberapa versi, GORM akan menyesuaikan perintah SQL sesuai versi MySQL.
 
-```
+```go
 type Migrator interface {
  // AutoMigrate
  AutoMigrate(dst ...interface{}) error
@@ -3190,12 +3166,12 @@ type Migrator interface {
 
 Mengembalikan nama database yang sedang digunakan:
 
-```
+```go
 db.Migrator().CurrentDatabase()
 ```
 ## 5.7.4 Table
 
-```
+```go
 // Membuat tabel untuk User
 db.Migrator().CreateTable(&User{})
 
@@ -3216,7 +3192,7 @@ db.Migrator().RenameTable("users", "user_infos")
 ```
 ## 5.7.5 Columns
 
-```
+```go
 type User struct {
  Name string
 }
@@ -3259,14 +3235,14 @@ type ColumnType interface {
 ```
 Ada juga ColumnType yang menyediakan informasi seperti Nama kolom (Name), Tipe data (DatabaseTypeName), Panjang (Length), Nullable, Unique, DefaultValue, dll.
 
-```
+```go
 db.Migrator().ColumnTypes(&User{}) ([]gorm.ColumnType, error)
 ```
 ## 5.7.6 Views
 
 SQLite belum mendukung opsi Replace pada ViewOption
 
-```
+```go
 query := db.Model(&User{}).Where("age > ?", 20)
 
 // Create View
@@ -3287,7 +3263,7 @@ db.Migrator().DropView("users_pets")
 ```
 ## 5.7.7 Constrain
 
-```
+```go
 type UserIndex struct {
  Name  string `gorm:"check:name_checker,name <> 'jinzhu'"`
 }
@@ -3303,7 +3279,7 @@ db.Migrator().HasConstraint(&User{}, "name_checker")
 ```
 Buat FOREIGN KEY untuk relasi
 
-```
+```go
 type User struct {
  gorm.Model
  CreditCards []CreditCard
@@ -3330,7 +3306,7 @@ db.Migrator().DropConstraint(&User{}, "fk_users_credit_cards")
 ```
 ## 5.7.8 Indexes
 
-```
+```go
 type User struct {
  gorm.Model
  Name string `gorm:"size:255;index:idx_name,unique"`
@@ -3357,22 +3333,3 @@ type User struct {
 db.Migrator().RenameIndex(&User{}, "Name", "Name2")
 db.Migrator().RenameIndex(&User{}, "idx_name", "idx_name_2")
 ```
-
-
-# Referensi
-
-[https://go.dev/doc/](https://go.dev/doc/)
-
-[https://youtu.be/IO_vkyJnMas?si=p78TAdyyNfoQb1PF](https://youtu.be/IO_vkyJnMas?si=p78TAdyyNfoQb1PF)
-
-[https://dasarpemrogramangolang.novalagung.com/C-project-layout-structure.html](https://dasarpemrogramangolang.novalagung.com/C-project-layout-structure.html)
-
-[https://www.calhoun.io/using-mvc-to-structure-go-web-applications/](https://www.calhoun.io/using-mvc-to-structure-go-web-applications/)
-
-[https://github.com/josephspurrier/gowebapp](https://github.com/josephspurrier/gowebapp)
-
-[https://gist.github.com/ayoubzulfiqar/9f1a34049332711fddd4d4b2bfd46096](https://gist.github.com/ayoubzulfiqar/9f1a34049332711fddd4d4b2bfd46096)
-
-[https://gorm.io/docs/](https://gorm.io/docs/)
-
-[https://github.com/akmamun/gin-boilerplate](https://github.com/akmamun/gin-boilerplate)
