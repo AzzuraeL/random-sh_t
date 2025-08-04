@@ -8,7 +8,7 @@ Go modules merupakan tools untuk manajemen dependensi resmi milik Go. Modules di
 
 ## 2.1.2 Inisialisasi Module/Project Dengan Go Module
 
-Command **“go mod init” **digunakan untuk menginisialisasi project baru. Mari langsung praktekan saja. Buat folder baru, bisa via CLI (cmd, Powershell, Terminal, dll)
+Command **“go mod init”** digunakan untuk menginisialisasi project baru. Mari langsung praktekan saja. Buat folder baru, bisa via CLI (cmd, Powershell, Terminal, dll)
 
 ```
 mkdir first_module
@@ -27,7 +27,7 @@ Pengembangan aplikasi Go pastinya tak akan jauh dari hal-hal yang berbau CLI ata
 
 ## 2.2.1 go mod
 
-1. go mod init
+**1. go mod init**
 
 Command go mod init digunakan untuk inisialisasi project pada Go yang menggunakan Go Modules. Untuk nama project bisa menggunakan apapun, tapi umumnya disamakan dengan nama direktori/folder.Nama project ini penting karena nantinya berpengaruh pada import path sub packages yang ada dalam project tersebut.
 
@@ -36,15 +36,15 @@ mkdir <project-name>
 cd <project-name>
 go mod init <project-name>
 ```
-2. go mod download
+**2. go mod download**
 
 Command go mod download digunakan untuk men-download dependency.
 
-3. go mod tidy
+**3. go mod tidy**
 
 *Command* go mod tidy digunakan untuk memvalidasi dependency sekaligus men-download-nya jika memang belum ter-download.
 
-4. go mod vendor
+**4. go mod vendor**
 
 Command ini digunakan untuk vendoring
 
@@ -56,7 +56,7 @@ Command ini digunakan untuk vendoring
 
 *Command* go run hanya bisa digunakan pada file yang nama package-nya adalah main contohnya seperti program berikut.
 
-```
+```go
 package main
 import "fmt"
 func main() {
@@ -69,8 +69,8 @@ func main() {
 
 ```
 cd first_module
-`go`` get github.com``/``segmentio``/``kafka``-go`
-
+go get github.com/segmentio/kafka-go
+```
 
 ![Enter image alt description](Images/8Dy_Image_4.png)
 
@@ -81,16 +81,16 @@ Pada contoh di atas, bisa dilihat bahwa URL [github.com/segmentio/kafka-go](http
 
 Goroutine secara konsep mirip seperti *thread*, meskipun sebenarnya berbeda. Sebuah *native thread* bisa berisikan sangat banyak goroutine. Mungkin lebih pas kalau goroutine disebut sebagai mini thread. Goroutine sangat ringan, hanya dibutuhkan sekitar 2kB memori saja untuk satu buah goroutine. Eksekusi goroutine bersifat *asynchronous*, menjadikannya tidak saling tunggu dengan goroutine lain.
 
-```
-*Karena goroutine sangat ringan, maka eksekusi banyak goroutine bukan masalah. Akan tetapi jika jumlah goroutine sangat banyak sekali (contoh 1 juta goroutine dijalankan pada komputer dengan RAM terbatas), memang proses akan jauh lebih cepat selesai, tapi memory/RAM pasti bengkak. Selain itu, dalam pengaplikasiannya jangan hanya terpaku pada size goroutine yang kecil tersebut, tapi pertimbangkan juga kode/proses/logic yang dibuat di dalam goroutine itu sekompleks apa, karena hal tersebut sangat berpengaruh dengan konsumsi resource hardware.*
 
-Goroutine merupakan salah satu bagian paling penting dalam *concurrent programming* di Go. Salah satu yang membuat goroutine sangat istimewa adalah eksekusi-nya dijalankan di multi core processor. Kita bisa tentukan berapa banyak core yang aktif, makin banyak akan makin cepat. 
+>*Karena goroutine sangat ringan, maka eksekusi banyak goroutine bukan masalah. Akan tetapi jika jumlah goroutine sangat banyak sekali (contoh 1 juta goroutine dijalankan pada komputer dengan RAM terbatas), memang proses akan jauh lebih cepat selesai, tapi memory/RAM pasti bengkak. Selain itu, dalam pengaplikasiannya jangan hanya terpaku pada size goroutine yang kecil tersebut, tapi pertimbangkan juga kode/proses/logic yang dibuat di dalam goroutine itu sekompleks apa, karena hal tersebut sangat berpengaruh dengan konsumsi resource hardware.*
+>
+>Goroutine merupakan salah satu bagian paling penting dalam *concurrent programming* di Go. Salah satu yang membuat goroutine sangat istimewa adalah eksekusi-nya dijalankan di multi core processor. Kita bisa tentukan berapa banyak core yang aktif, makin banyak akan makin cepat. 
 
 Untuk menerapkan goroutine, proses yang akan dieksekusi sebagai goroutine harus dibungkus ke dalam sebuah fungsi, ini hukumnya wajib. Kemudian nantinya saat pemanggilan fungsi, tambahkan keyword go di depannya, dengan ini maka goroutine baru dibuat dengan tugas adalah menjalankan proses yang ada dalam fungsi tersebut. 
 
 Berikut merupakan contoh implementasi sederhana tentang goroutine. Program di bawah ini menampilkan 10 baris teks, 5 dieksekusi dengan cara biasa, dan 5 lainnya dieksekusi sebagai goroutine baru.
 
-```
+```go
 package main
 import "fmt"
 import "runtime"
@@ -120,7 +120,7 @@ Fungsi fmt.Scanln() mengakibatkan proses jalannya aplikasi berhenti di baris itu
 
 # 2.4 Struktur Umum Folder Proyek 
 
-1. MVC
+## 1. MVC
 
 ### 2.4.A.1 Controller
 
@@ -138,7 +138,7 @@ Satu hal penting yang ingin saya tekankan di sini adalah bahwa saya menganggap p
 
 ### 	2.4.A.3 Routes
 
-	Dalam arsitektur **MVC (Model-View-Controller)**, folder routes berfungsi untuk mendefinisikan **rute (routes)** atau **jalur-jalur URL** yang akan diproses oleh aplikasi web. Folder ini biasanya berisi kode yang menghubungkan **request HTTP (seperti GET, POST, PUT, DELETE)** ke **controller** yang sesuai.
+Dalam arsitektur **MVC (Model-View-Controller)**, folder routes berfungsi untuk mendefinisikan **rute (routes)** atau **jalur-jalur URL** yang akan diproses oleh aplikasi web. Folder ini biasanya berisi kode yang menghubungkan **request HTTP (seperti GET, POST, PUT, DELETE)** ke **controller** yang sesuai.
 
 ### 	2.4.A.4 Database
 
@@ -160,7 +160,7 @@ Package **pprofhandler** mengaktifkan **pprof** agar dapat bekerja dengan **http
 
 Di dalam file route.go, semua *route* individu menggunakan **alice** agar *chaining middleware* menjadi sangat mudah
 
-2. Common Folder Structures in GO
+## 2. Common Folder Structures in GO
 
 ```
 project-root/
@@ -222,24 +222,16 @@ project-root/
 Berikut penjelasan singkat mengenai direktori-direktori utama:
 
 - **cmd/**: Direktori ini berisi *entry point* spesifik aplikasi (biasanya satu untuk setiap aplikasi atau service). Di sinilah aplikasi kamu dimulai.
-
 - **internal/**: Direktori ini menyimpan kode aplikasi dan package yang bersifat privat. Kode di dalam direktori ini tidak dimaksudkan untuk digunakan oleh proyek lain. Ini merupakan cara untuk membatasi akses dalam proyek kamu.
-
 - **pkg/**: Direktori ini berisi package publik dan dapat digunakan kembali oleh proyek lain. Kode di dalam direktori ini dimaksudkan untuk di-*import* oleh proyek eksternal.
-
 - **api/**: Direktori ini biasanya berisi kode yang terkait dengan API HTTP atau RPC, termasuk *request handler* dan *middleware*.
-
 - **web/**: Jika proyek kamu memiliki aplikasi web front-end, maka aset-aset seperti CSS, JavaScript, dan template ditempatkan di sini.
-
 - **scripts/**: Berisi skrip untuk membangun (*build*), menyebarkan (*deploy*), atau melakukan pemeliharaan proyek.
-
 - **configs/**: Berisi file konfigurasi untuk berbagai lingkungan (*environment*), misalnya untuk *development* atau *production*.
-
 - **tests/**: Menyimpan *unit test* dan *integration test* untuk kode kamu.
-
 - **docs/**: Dokumentasi proyek, seperti dokumen desain atau dokumentasi API.
 
-- Flat Structure
+### - Flat Structure
 
 ```
 project-root/
@@ -255,7 +247,7 @@ project-root/
     ├── tests/
     └── docs/
 ```
-- Layered Structure
+### - Layered Structure
 
 ```
 project-root/
@@ -274,7 +266,7 @@ project-root/
     ├── tests/
     ├── docs/
 ```
-- Domain-Driven Design (DDD)
+### - Domain-Driven Design (DDD)
 
 ```
 project-root/
@@ -308,7 +300,7 @@ project-root/
     ├── tests/
     └── docs/
 ```
-- Clean Architecture
+### - Clean Architecture
 
 ```
 project-root/
@@ -334,7 +326,7 @@ project-root/
     ├── tests/
     └── docs/
 ```
-- Modular Structure
+### - Modular Structure
 
 ```
 project-root/
@@ -359,7 +351,7 @@ Go mengadopsi dua jenis penulisan variabel, yaitu yang dituliskan tipe data-nya 
 
 Go memiliki aturan cukup ketat dalam hal penulisan variabel. Ketika deklarasi, tipe data yg digunakan harus dituliskan juga. Istilah dari metode deklarasi variabel ini adalah **manifest typing**. Berikut adalah contoh cara pembuatan variabel yang tipe datanya harus ditulis. Silakan tulis pada project baru atau pada project yang sudah ada, bebas. Pastikan pada setiap pembuatan project baru untuk tidak lupa menginisialisasi project menggunakan command go mod init <nama-project>.
 
-```
+```go
 package main
 
 import "fmt"
@@ -378,26 +370,27 @@ Keyword var di atas digunakan untuk deklarasi variabel, contohnya bisa dilihat p
 ## 2.5.2. Deklarasi Variabel Menggunakan Keyword var
 
 Pada kode di atas bisa dilihat bagaimana sebuah variabel dideklarasikan dan diisi nilainya. Keyword var digunakan untuk membuat variabel baru. Skema penggunaan keyword var:
+```
+var <nama-variable> <tipe-data>
 
-`var`` ``<``nama-variable``>`` ``<``tipe``-``data``>`
-
-`var`` ``<``nama``-``variable``>`` ``<``tipe``-``data``>`` ``=`` ``<``nilai``>`
+var <nama-variable> <tipe-data> = <nilai>
+```
 
 Contoh:
+```go
+var firstName string = "john"
 
-`var`` firstName ``string`` ``=`` ``"john"`
-
-`var`` lastName ``string`
-
+var lastName string
+```
 Nilai variabel bisa di-isi langsung pada saat deklarasi variabel.
 
-- Penggunaan Fungsi fmt.Printf()
+### - Penggunaan Fungsi fmt.Printf()
 
 Fungsi ini digunakan untuk menampilkan output dalam bentuk tertentu. Kegunaannya sama seperti fungsi fmt.Println(), hanya saja struktur outputnya didefinisikan di awal. Perhatikan bagian** ****"halo %s %s!\n"****,** karakter %s di situ akan diganti dengan data string yang berada di parameter ke-2, ke-3, dan seterusnya.
 
 Contoh lain, ketiga baris kode berikut ini akan menghasilkan output yang sama, meskipun cara penulisannya berbeda.
 
-```
+```go
 fmt.Printf("halo john wick!\n")
 fmt.Printf("halo %s %s!\n", firstName, lastName)
 fmt.Println("halo", firstName, lastName + "!")
@@ -410,7 +403,7 @@ Fungsi fmt.Printf() tidak menghasilkan baris baru di akhir text, oleh karena itu
 
 Selain *manifest typing*, Go juga mengadopsi konsep **type inference**, yaitu metode deklarasi variabel yang tipe data-nya diketahui secara otomatis dari data/nilai variabel. Cara ini kontradiktif jika dibandingkan dengan cara pertama. Dengan metode jenis ini, keyword var dan tipe data tidak perlu ditulis.
 
-```
+```go
 var firstName string = "john"
 lastName := "wick"
 fmt.Printf("halo %s %s!\n", firstName, lastName)
@@ -419,7 +412,7 @@ Variabel lastName dideklarasikan dengan menggunakan metode type inference. Penan
 
 Tipe data lastName secara otomatis akan ditentukan menyesuaikan value atau nilai-nya. Jika nilainya adalah berupa string maka tipe data variabel adalah string. Pada contoh di atas, nilainya adalah string "wick". Diperbolehkan untuk tetap menggunakan keyword var pada saat deklarasi meskipun tanpa menuliskan tipe data, dengan ketentuan tidak menggunakan tanda :=, melainkan tetap menggunakan =.
 
-```
+```go
 // menggunakan var, tanpa tipe data, menggunakan perantara "="
 var firstName = "john"
 
@@ -427,35 +420,35 @@ var firstName = "john"
 lastName := "wick"
 ```
 Tanda := hanya digunakan sekali di awal pada saat deklarasi. Untuk assignment nilai selanjutnya harus menggunakan tanda =, contoh:
+```go
+lastName := "wick"
 
-`lastName ``:=`` ``"wick"`
+lastName = "ethan"
 
-`lastName ``=`` ``"ethan"`
-
-`lastName ``=`` ``"bourne"`
-
+lastName = "bourne"
+```
 *Deklarasi menggunakan **:=** hanya bisa dilakukan di dalam blok fungsi, misalnya dalam blok fungsi **main()*
 
 ## 2.5.4. Deklarasi Multi Variabel
 
 Go mendukung metode deklarasi banyak variabel secara bersamaan, caranya dengan menuliskan variabel-variabel-nya dengan pembatas tanda koma (,). Untuk pengisian nilainya-pun diperbolehkan secara bersamaan.
+```go
+var first, second, third string
 
-`var`` first, second, third ``string`
-
-`first, second, third ``=`` ``"satu"``, ``"dua"``, ``"tiga"`
-
+first, second, third = "satu", "dua", "tiga"
+```
 Pengisian nilai juga bisa dilakukan bersamaan pada saat deklarasi. Caranya dengan menuliskan nilai masing-masing variabel berurutan sesuai variabelnya dengan pembatas koma (,).
-
-`var`` fourth, fifth, sixth ``string`` ``=`` ``"empat"``, ``"lima"``, ``"enam"`
-
+```go
+var fourth, fifth, sixth string = "empat", "lima", "enam"
+```
 Kalau ingin lebih ringkas:
-
-`seventh, eight, ninth ``:=`` ``"tujuh"``, ``"delapan"``, ``"sembilan"`
-
+```go
+seventh, eight, ninth := "tujuh", "delapan", "sembilan"
+```
 Dengan menggunakan teknik type inference, deklarasi multi variabel bisa dilakukan untuk variabel-variabel yang tipe data satu sama lainnya berbeda.
-
-`one, isFriday, twoPointTwo, say ``:=`` ``1``, ``true``, ``2.2``, ``"hello"`
-
+```go
+one, isFriday, twoPointTwo, say := 1, true, 2.2, "hello"
+```
 ## 2.5.5. Variabel Underscore _
 
 Go memiliki aturan unik yang jarang dimiliki bahasa lain, yaitu tidak boleh ada satupun variabel yang menganggur. Artinya, semua variabel yang dideklarasikan harus digunakan. Jika ada variabel yang tidak digunakan tapi dideklarasikan, error akan muncul pada saat kompilasi dan program tidak akan bisa di-run.
@@ -463,13 +456,13 @@ Go memiliki aturan unik yang jarang dimiliki bahasa lain, yaitu tidak boleh ada 
 ![Enter image alt description](Images/yhp_Image_6.png)
 
 *Underscore* (_) adalah *reserved variable* yang bisa dimanfaatkan untuk menampung nilai yang tidak dipakai. Bisa dibilang variabel ini merupakan keranjang sampah.
+```go
+_ = "belajar Golang"
 
-`_ ``=`` ``"belajar Golang"`
+_ = "Golang itu mudah"
 
-`_ ``=`` ``"Golang itu mudah"`
-
-`name, _ ``:=`` ``"john"``, ``"wick"`
-
+name, _ := "john", "wick"
+```
 Pada contoh di atas, variabel name akan berisikan text john, sedang nilai wick ditampung oleh variabel underscore, menandakan bahwa nilai tersebut tidak akan digunakan.
 
 Variabel underscore adalah *predefined*, jadi tidak perlu menggunakan := untuk pengisian nilai, cukup dengan = saja. Namun khusus untuk pengisian nilai multi variabel yang dilakukan dengan metode type inference, boleh di dalamnya terdapat variabel underscore.
@@ -482,7 +475,7 @@ Perlu diketahui, bahwa isi variabel underscore tidak dapat ditampilkan. Data yan
 
 Fungsi new() digunakan untuk membuat variabel **pointer** dengan tipe data tertentu. Nilai data default-nya akan menyesuaikan tipe datanya.
 
-```
+```go
 name := new(string)
 
 fmt.Println(name)   // 0x20818a220
@@ -533,7 +526,7 @@ Kedua tipe data di atas kemudian dibagi lagi menjadi beberapa jenis, dengan pemb
 
 Dianjurkan untuk tidak sembarangan dalam menentukan tipe data variabel, sebisa mungkin tipe yang dipilih harus disesuaikan dengan nilainya, karena efeknya adalah ke alokasi memori variabel. Pemilihan tipe data yang tepat akan membuat pemakaian memori lebih optimal, tidak berlebihan.
 
-```
+```go
 var positiveNumber uint8 = 89
 var negativeNumber = -1243423644
 
@@ -548,7 +541,7 @@ String format %d pada fmt.Printf() digunakan untuk memformat data numerik non-de
 
 Tipe data numerik desimal yang perlu diketahui ada 2, float32 dan float64. Perbedaan kedua tipe data tersebut berada di lebar cakupan nilai desimal yang bisa ditampung. Untuk lebih jelasnya bisa merujuk ke spesifikasi [IEEE-754 32-bit floating-point numbers](http://www.h-schmidt.net/FloatConverter/IEEE754.html).
 
-```
+```go
 var decimalNumber = 2.62
 
 fmt.Printf("bilangan desimal: %f\n", decimalNumber)
@@ -563,24 +556,22 @@ String format %f digunakan untuk memformat data numerik desimal menjadi string. 
 ## 2.6.3. Tipe Data bool (Boolean)
 
 Tipe data bool berisikan hanya 2 variansi nilai, true dan false. Tipe data ini biasa dimanfaatkan dalam percabangan dan Loop 
-
-`var`` exist ``bool`` ``=`` ``true`
-
-`fmt.``Printf``(``"exist? ``%t`` ``\n``"``, exist)`
-
+```go
+var exist bool = true
+fmt.Printf("exist? %t \n", exist)
+```
 Gunakan %t untuk memformat data bool menggunakan fungsi fmt.Printf().
 
 ## 2.6.4. Tipe Data string
 
 Ciri khas dari tipe data string adalah nilainya diapit oleh tanda *quote* atau petik dua ("). Contoh penerapannya:
-
-`var`` message ``string`` ``=`` ``"Halo"`
-
-`fmt.``Printf``(``"message: ``%s`` ``\n``"``, message)`
-
+```go
+var message string = "Halo"
+fmt.Printf("message: %s \n", message)
+```
 Selain menggunakan tanda quote, deklarasi string juga bisa dengan tanda *grave accent/backticks* (`), tanda ini terletak di sebelah kiri tombol 1. Keistimewaan string yang dideklarasikan menggunakan backtics adalah membuat semua karakter di dalamnya **tidak di escape**, termasuk \n, tanda petik dua dan tanda petik satu, baris baru, dan lainnya. Semua akan terdeteksi sebagai string.
 
-```
+```go
 var message = `Nama saya "John Wick".
 Salam kenal.
 Mari belajar "Golang".`
@@ -594,15 +585,11 @@ Ketika dijalankan, output akan muncul sama persis sesuai nilai variabel message 
 ## 2.6.5. Nilai nil & Zero Value
 
 nil bukan merupakan tipe data, melainkan sebuah nilai. Variabel yang isi nilainya nil berarti memiliki nilai kosong.
-
 Semua tipe data yang sudah dibahas di atas memiliki zero value (nilai default tipe data). Artinya meskipun variabel dideklarasikan dengan tanpa nilai awal, tetap akan ada nilai default-nya.
 
 - Zero value dari string adalah "" (string kosong).
-
 - Zero value dari bool adalah false.
-
 - Zero value dari tipe numerik non-desimal adalah 0.
-
 - Zero value dari tipe numerik desimal adalah 0.0.
 
 Selain tipe data yang disebutkan di atas, ada juga tipe data lain yang zero value-nya adalah nil. Nil merepresentasikan nilai kosong, benar-benar kosong. nil tidak bisa digunakan pada tipe data yang sudah dibahas di atas.
@@ -610,15 +597,10 @@ Selain tipe data yang disebutkan di atas, ada juga tipe data lain yang zero valu
 Beberapa tipe data yang bisa di-set nilainya dengan nil, di antaranya:
 
 - pointer
-
 - tipe data fungsi
-
 - slice
-
 - map
-
 - channel
-
 - interface kosong atau any (yang merupakan alias dari interface{})
 
 # 2.7 Operator
@@ -636,9 +618,9 @@ Operator aritmatika adalah operator yang digunakan untuk operasi yang sifatnya p
 | % | modulus / sisa hasil pembagian |
 
 Contoh penggunaan:
-
-`var`` value ``=`` (((``2`` ``+`` ``6``) ``%`` ``3``) ``*`` ``4`` ``-`` ``2``) ``/`` ``3`
-
+```go
+var value = (((2 + 6) % 3) * 4 - 2) / 3
+```
 ## 2.7.2. Operator Perbandingan
 
 Operator perbandingan digunakan untuk menentukan kebenaran suatu kondisi. Hasilnya berupa nilai boolean, true atau false.
@@ -656,7 +638,7 @@ Tabel di bawah ini berisikan operator perbandingan yang bisa digunakan di Go.
 
 Contoh penggunaan:
 
-```
+```go
 var value = (((2 + 6) % 3) * 4 - 2) / 3
 var isEqual = (value == 2)
 fmt.Printf("nilai %d (%t) \n", value, isEqual)
@@ -679,7 +661,7 @@ Beberapa operator logika standar yang bisa digunakan:
 
 Contoh penggunaan:
 
-```
+```go
 var left = false
 var right = true
 
@@ -697,9 +679,7 @@ Hasil dari operator logika sama dengan hasil dari operator perbandingan, yaitu b
 Berikut penjelasan statemen operator logika pada kode di atas.
 
 - leftAndRight bernilai false, karena hasil dari false **dan** true adalah false.
-
 - leftOrRight bernilai true, karena hasil dari false **atau** true adalah true.
-
 - leftReverse bernilai true, karena **negasi** (atau lawan dari) false adalah true.
 
 Template \t digunakan untuk menambahkan indent tabulasi. Biasa dimanfaatkan untuk merapikan tampilan output pada console.
@@ -719,7 +699,7 @@ Statement seperti **var data = (isExist ? "ada" : "tidak ada")** adalah invalid 
 
 Cara penerapan if-else di Go sama seperti pada bahasa pemrograman lain. Yang membedakan hanya tanda kurungnya *(parentheses)*, di Go tidak perlu ditulis. Kode berikut merupakan contoh penerapan percabangan if else, dengan jumlah kondisi 4 buah.
 
-```
+```go
 var point = 8
 
 if point == 10 {
@@ -743,12 +723,10 @@ Penulisan if else Go diawali dengan keyword if kemudian diikuti nilai percabanga
 Variabel temporary adalah variabel yang hanya bisa digunakan pada deretan blok percabangan di mana ia ditempatkan. Penggunaan variabel ini membawa beberapa manfaat, antara lain:
 
 - Scope atau cakupan variabel jelas, hanya bisa digunakan pada blok percabangan itu saja
-
 - Kode menjadi lebih rapi
-
 - Ketika nilai variabel tersebut didapat dari sebuah komputasi, perhitungan tidak perlu dilakukan di dalam blok masing-masing kondisi.
 
-```
+```go
 var point = 8840.0
 
 if percent := point / 100; percent >= 100 {
@@ -767,7 +745,7 @@ Variabel percent nilainya didapat dari hasil perhitungan, dan hanya bisa digunak
 
 Switch merupakan percabangan yang sifatnya fokus pada satu variabel, lalu kemudian di-cek nilainya. Contoh sederhananya seperti penentuan apakah nilai variabel x adalah: 1, 2, 3, atau lainnya.
 
-```
+```go
 var point = 6
 
 switch point {
@@ -787,7 +765,7 @@ Perlu diketahui, switch pada pemrograman Go memiliki perbedaan dibanding bahasa 
 
 Sebuah case dapat menampung banyak kondisi. Cara penerapannya yaitu dengan menuliskan nilai pembanding-pembanding variabel yang di-switch setelah keyword case dipisah tanda koma (,).
 
-```
+```go
 var point = 6
 
 switch point {
@@ -807,7 +785,7 @@ Tanda kurung kurawal ({ }) bisa diterapkan pada keyword case dan default. Tanda 
 
 Perhatikan kode berikut, bisa dilihat pada keyword default terdapat kurung kurawal yang mengapit 2 statement di dalamnya.
 
-```
+```go
 var point = 6
 
 switch point {
@@ -828,7 +806,7 @@ Uniknya di Go, switch bisa digunakan dengan gaya ala if-else. Nilai yang akan di
 
 Pada kode di bawah ini, kode program switch di atas diubah ke dalam gaya if-else. Variabel point dihilangkan dari keyword switch, lalu kondisi-kondisinya dituliskan di tiap case.
 
-```
+```go
 var point = 6
 
 switch {
@@ -849,7 +827,7 @@ Seperti yang sudah dijelaskan sebelumnya, bahwa switch pada Go memiliki perbedaa
 
 Keyword fallthrough digunakan untuk memaksa proses pengecekan tetap diteruskan ke case selanjutnya dengan **tanpa menghiraukan nilai kondisinya**, efeknya adalah case di pengecekan selanjutnya selalu dianggap true (meskipun aslinya bisa saja kondisi tersebut tidak terpenuhi, akan tetap dianggap true).
 
-```
+```go
 var point = 6
 
 switch {
@@ -875,7 +853,7 @@ Di contoh, setelah pengecekan case (point < 8) && (point > 3) selesai, dilanjut 
 
 Percabangan bersarang adalah percabangan, yang berada dalam percabangan, yang mungkin juga berada dalam percabangan, dan seterusnya. percabangan bersarang bisa dilakukan pada if - else, switch, ataupun kombinasi keduanya.
 
-```
+```go
 var point = 10
 
 if point > 7 {
@@ -901,14 +879,13 @@ if point > 7 {
 # 2.9 Loop
 
 Loop adalah proses mengulang-ulang eksekusi blok kode tanpa henti, selama kondisi yang dijadikan acuan terpenuhi. Biasanya disiapkan variabel untuk iterasi atau variabel penanda kapan Loop akan diberhentikan.
-
 Di Go keyword Loop hanya **for** saja, tetapi meski demikian, kemampuannya merupakan gabungan for, foreach, dan while ibarat bahasa pemrograman lain.
 
 ## 2.9.1. Loop Menggunakan Keyword for
 
 Ada beberapa cara standar menggunakan for. Cara pertama dengan memasukkan variabel counter Loop beserta kondisinya setelah keyword. Perhatikan dan praktekan kode berikut.
 
-```
+```go
 for i := 0; i < 5; i++ {
     fmt.Println("Angka", i)
 }
@@ -923,7 +900,7 @@ Cara ke-2 adalah dengan menuliskan kondisi setelah keyword for (hanya kondisi). 
 
 Kode berikut adalah contoh for dengan argumen hanya kondisi (seperti if), output yang dihasilkan sama seperti penerapan for cara pertama.
 
-```
+```go
 var i = 0
 
 for i < 5 {
@@ -935,7 +912,7 @@ for i < 5 {
 
 Cara ke-3 adalah for ditulis tanpa kondisi. Dengan ini akan dihasilkan Loop tanpa henti (sama dengan for true). Pemberhentian Loop dilakukan dengan menggunakan keyword break.
 
-```
+```go
 var i = 0
 
 for {
@@ -953,7 +930,7 @@ Dalam Loop tanpa henti di atas, variabel i yang nilai awalnya 0 di-inkrementasi.
 
 Cara ke-4 adalah Loop dengan menggunakan kombinasi keyword for dan range. Cara ini biasa digunakan untuk me-looping data gabungan (misalnya string, array, slice, map). 
 
-```
+```go
 var xs = "123" // string
 for i, v := range xs {
     fmt.Println("Index=", i, "Value=", v)
@@ -989,7 +966,7 @@ Keyword break digunakan untuk menghentikan secara paksa sebuah Loop, sedangkan c
 
 Berikut contoh penerapan continue dan break. Kedua keyword tersebut dimanfaatkan untuk menampilkan angka genap berurutan yang lebih besar dari 0 dan kurang dari atau sama dengan 8.
 
-```
+```go
 for i := 1; i <= 10; i++ {
     if i % 2 == 1 {
         continue
@@ -1005,11 +982,8 @@ for i := 1; i <= 10; i++ {
 Kode di atas akan lebih mudah dicerna jika dijelaskan secara berurutan. Berikut adalah penjelasannya.
 
 1. Dilakukan Loop mulai angka 1 hingga 10 dengan i sebagai variabel iterasi.
-
 2. Ketika i adalah ganjil (dapat diketahui dari i % 2, jika hasilnya 1, berarti ganjil), maka akan dipaksa lanjut ke Loop berikutnya.
-
 3. Ketika i lebih besar dari 8, maka Loop akan berhenti.
-
 4. Nilai i ditampilkan.
 
 ![Enter image alt description](Images/H0o_Image_12.png)
@@ -1018,7 +992,7 @@ Kode di atas akan lebih mudah dicerna jika dijelaskan secara berurutan. Berikut 
 
 Tak hanya percabangan yang bisa bersarang, Loop juga bisa. Cara pengaplikasiannya kurang lebih sama, tinggal tulis blok statement Loop di dalam Loop.
 
-```
+```go
 for i := 0; i < 5; i++ {
     for j := i; j < 5; j++ {
         fmt.Print(j, " ")
@@ -1037,7 +1011,7 @@ Di Loop bersarang, break dan continue akan berlaku pada blok Loop di mana ia dig
 
 Program untuk memunculkan matriks berikut merupakan contoh penerapan label Loop.
 
-```
+```go
 outerLoop:
 for i := 0; i < 5; i++ {
     for j := 0; j < 5; j++ {
@@ -1049,7 +1023,6 @@ for i := 0; i < 5; i++ {
 }
 ```
 Tepat sebelum keyword for terluar, terdapat baris kode outerLoop:. Maksud dari kode tersebut adalah disiapkan sebuah label bernama outerLoop untuk for di bawahnya. Nama label bisa diganti dengan nama lain (dan harus diakhiri dengan tanda titik dua atau *colon* (:) ).
-
 Pada for bagian dalam, terdapat percabangan untuk pengecekan nilai i. Ketika nilai tersebut sama dengan 3, maka break dipanggil dengan target adalah Loop yang dilabeli outerLoop, Loop tersebut akan dihentikan.
 
 ![Enter image alt description](Images/KQy_Image_14.png)
@@ -1061,16 +1034,13 @@ Dalam konteks pemrograman, fungsi adalah sekumpulan blok kode yang dibungkus den
 ## 2.10.1. Penerapan Fungsi
 
 Sebenarnya kita sudah mengimplementasikan fungsi pada banyak praktek sebelumnya, yaitu fungsi main(). Fungsi main() sendiri merupakan fungsi utama pada program Go, yang akan dieksekusi ketika program dijalankan.
-
 Selain fungsi main(), kita juga bisa membuat fungsi lainnya. Dan caranya cukup mudah, yaitu dengan menuliskan keyword func kemudian diikuti nama fungsi, lalu kurung () (yang bisa diisi parameter), dan diakhiri dengan kurung kurawal untuk membungkus blok kode.
-
 Parameter merupakan variabel yang menempel di fungsi yang nilainya ditentukan saat pemanggilan fungsi tersebut. Parameter sifatnya opsional, suatu fungsi bisa tidak memiliki parameter, atau bisa saja memeliki satu atau banyak parameter (tergantung kebutuhan).
-
 *Data yang digunakan sebagai value parameter saat pemanggilan fungsi biasa disebut dengan argument parameter (atau argument).*
 
 Agar lebih jelas, silakan lihat dan praktekan kode contoh implementasi fungsi berikut ini:
 
-```
+```go
 package main
 
 import "fmt"
@@ -1091,7 +1061,6 @@ Pada kode di atas, sebuah fungsi baru dibuat dengan nama printMessage() memiliki
 Fungsi tersebut dipanggil dalam main(), dalam pemanggilannya disisipkan dua buah argument parameter.
 
 1. Argument parameter pertama adalah string "halo" yang ditampung parameter message
-
 2. Argument parameter ke-2 adalah slice string names yang nilainya ditampung oleh parameter arr
 
 Di dalam printMessage(), nilai arr yang merupakan slice string digabungkan menjadi sebuah string dengan pembatas adalah karakter **spasi**. Penggabungan slice dapat dilakukan dengan memanfaatkan fungsi strings.Join() (berada di dalam package strings).
@@ -1100,13 +1069,11 @@ Di dalam printMessage(), nilai arr yang merupakan slice string digabungkan menja
 
 ## 2.10.2. Fungsi Dengan Return Value / Nilai Balik
 
-Selain parameter, fungsi bisa memiliki attribute **return value** atau nilai balik. Fungsi yang memiliki return value, saat deklarasinya harus ditentukan terlebih dahulu tipe data dari nilai baliknya.
-
-*Fungsi yang tidak mengembalikan nilai apapun (contohnya seperti fungsi **main()** dan **printMessage()**) biasa disebut dengan ****void function***
+Selain parameter, fungsi bisa memiliki attribute **return value** atau nilai balik. Fungsi yang memiliki return value, saat deklarasinya harus ditentukan terlebih dahulu tipe data dari nilai baliknya. *Fungsi yang tidak mengembalikan nilai apapun (contohnya seperti fungsi **main()** dan **printMessage()**) biasa disebut dengan ****void function***
 
 Program berikut merupakan contoh penerapan fungsi yang memiliki return value.
 
-```
+```go
 package main
 
 import (
@@ -1140,21 +1107,19 @@ Fungsi randomWithRange() didesain untuk *generate* angka acak sesuai dengan rang
 ![Enter image alt description](Images/1i1_Image_16.png)
 
 Cara menentukan tipe data nilai balik fungsi adalah dengan menuliskan tipe data yang diinginkan setelah kurung parameter. Bisa dilihat pada kode di atas, bahwa int merupakan tipe data nilai balik fungsi randomWithRange().
-
-`func`` ``randomWithRange``(``min``, ``max`` ``int``) ``int`
-
+```go
+func randomWithRange(min, max int) int
+```
 Sedangkan cara untuk mengembalikan nilai itu sendiri adalah dengan menggunakan keyword return diikuti data yang dikembalikan. Pada contoh di atas, return value artinya nilai variabel value dijadikan nilai kembalian fungsi.
-
 Eksekusi keyword return akan menjadikan proses dalam blok fungsi berhenti pada saat itu juga. Semua statement setelah keyword tersebut tidak akan dieksekusi.
-
 Dari kode di atas mungkin ada beberapa hal yang belum pernah kita lakukan pada pembahasan-pembahasan sebelumnya, kita akan bahas satu-persatu.
 
 ## 2.10.3. Penggunaan Fungsi rand.New()
 
 Fungsi rand.New() digunakan untuk membuat object randomizer, yang dari object tersebut kita bisa mendapatkan nilai random/acak hasil generator. Dalam penerapannya, fungsi rand.New() membutuhkan argument yaitu random source seed, yang bisa kita buat lewat statement rand.NewSource(time.Now().Unix()).
-
-`var`` randomizer ``=`` rand.``New``(rand.``NewSource``(time.``Now``().``Unix``()))`
-
+```go
+var randomizer = rand.New(rand.NewSource(time.Now().Unix()))
+```
 *Dalam penggunaan fungsi **rand.NewSource()**, argument bisa diisi dengan nilai apapun, salah satunya adalah **time.Now().Unix()**.*
 
 Fungsi rand.New() berada dalam package math/rand. Package tersebut harus di-import terlebih dahulu sebelum bisa menggunakan fungsi-fungsi yang ada didalamnya. Package time juga perlu di-import karena di contoh ini fungsi (time.Now().Unix()) digunakan.
@@ -1163,7 +1128,7 @@ Fungsi rand.New() berada dalam package math/rand. Package tersebut harus di-impo
 
 Penulisan keyword import untuk banyak package bisa dilakukan dengan dua cara, dengan menuliskannya di tiap package, atau cukup sekali saja, bebas silakan pilih sesuai selera.
 
-```
+```go
 import "fmt"
 import "math/rand"
 import "time"
@@ -1180,7 +1145,7 @@ import (
 
 Khusus untuk fungsi yang tipe data parameternya sama, bisa ditulis dengan gaya yang unik. Tipe datanya dituliskan cukup sekali saja di akhir. Contohnya bisa dilihat pada kode berikut.
 
-```
+```go
 func nameOfFunc(paramA type, paramB type, paramC type) returnType
 func nameOfFunc(paramA, paramB, paramC type) returnType
 
@@ -1191,7 +1156,7 @@ func randomWithRange(min, max int) int
 
 Selain sebagai penanda nilai balik, keyword return juga bisa dimanfaatkan untuk menghentikan proses dalam blok fungsi di mana ia ditulis. Contohnya bisa dilihat pada kode berikut.
 
-```
+```go
 package main
 
 import "fmt"
@@ -1227,20 +1192,19 @@ Variabel-variabel yang memiliki *reference* atau alamat pointer yang sama, salin
 ## 2.11.1. Penerapan Pointer
 
 Variabel bertipe pointer ditandai dengan adanya tanda **asterisk** (*) tepat sebelum penulisan tipe data ketika deklarasi.
+```go
+var number *int
 
-`var`` number ``*int`
-
-`var`` name ``*string`
-
+var name *string
+```
 Nilai default variabel pointer adalah nil (kosong). Variabel pointer tidak bisa menampung nilai yang bukan pointer, dan sebaliknya variabel biasa tidak bisa menampung nilai pointer.
 
 Ada dua hal penting yang perlu diketahui mengenai pointer:
 
 - Variabel biasa bisa diambil nilai pointernya, caranya dengan menambahkan tanda **ampersand** (&) tepat sebelum nama variabel. Metode ini disebut dengan **referencing**.
-
 - Dan sebaliknya, nilai asli variabel pointer juga bisa diambil, dengan cara menambahkan tanda **asterisk** (*) tepat sebelum nama variabel. Metode ini disebut dengan **dereferencing**.
 
-```
+```go
 var numberA int = 4
 var numberB *int = &numberA
 
@@ -1270,7 +1234,7 @@ Variabel numberA dan numberB memiliki referensi memori yang sama. Perubahan pada
 
 Parameter bisa juga dirancang sebagai pointer. Cara penerapannya kurang lebih sama, dengan cara mendeklarasikan parameter sebagai pointer.
 
-```
+```go
 package main
 import "fmt"
 
@@ -1285,9 +1249,7 @@ func change(original *int, value int) {
 }
 ```
 Fungsi change() memiliki 2 parameter, yaitu original yang tipenya adalah pointer int, dan value yang bertipe int. Di dalam fungsi tersebut nilai asli parameter pointer original diubah.
-
 Fungsi change() kemudian diimplementasikan di main. Variabel number yang nilai awalnya adalah 4 diambil referensi-nya lalu digunakan sebagai parameter pada pemanggilan fungsi change().
-
 Nilai variabel number berubah menjadi 10 karena perubahan yang terjadi di dalam fungsi change adalah pada variabel pointer.
 
 ![Enter image alt description](Images/kHR_Image_20.png)
@@ -1309,23 +1271,19 @@ Dengan memanfaatkan struct, penyimpanan data yang sifatnya kolektif menjadi lebi
 ### 2.12.A.1. Deklarasi Struct
 
 Kombinasi keyword type dan struct digunakan untuk deklarasi struct. Di bawah ini merupakan contoh cara penerapannya.
-
-`type`` ``student`` ``struct`` {`
-
-`    name ``string`
-
-`    grade ``int`
-
-```
+```go
+type student struct {
+    name string
+    grade int
 }
+```
 Struct student dideklarasikan memiliki 2 property, yaitu name dan grade. Property adalah istilah untuk variabel yang menempel ke struct.
 
-```
 ### 2.12.A.2. Penerapan Struct Untuk Membuat Object
 
 Struct student yang sudah disiapkan di atas kita gunakan untuk membuat variabel objek. Variabel tersebut tipe datanya adalah student. Kemudian dari variabel object, kita bisa mengakses isi property variabel. Contoh:
 
-```
+```go
 func main() {
     var s1 student
     s1.name = "Kevin Khaslana"
@@ -1349,7 +1307,7 @@ Cara inisialisasi variabel objek adalah dengan menuliskan nama struct yang telah
 
 Pada contoh berikut, terdapat 3 buah variabel objek yang dideklarasikan dengan cara berbeda.
 
-```
+```go
 var s1 = student{}
 s1.name = "KEvin"
 s1.grade = 2
@@ -1367,16 +1325,15 @@ Pada kode di atas, variabel s1 menampung objek cetakan student. Variabel tersebu
 Variabel objek s2 dideklarasikan dengan metode yang sama dengan s1, pembedanya di s2 nilai propertinya di isi langsung ketika deklarasi. Nilai pertama akan menjadi nilai property pertama (yaitu name), dan selanjutnya berurutan.
 
 Pada deklarasi s3, dilakukan juga pengisian property ketika pencetakan objek. Hanya saja, yang diisi hanya name saja. Cara ini cukup efektif jika digunakan untuk membuat objek baru yang nilai property-nya tidak semua harus disiapkan di awal. Keistimewaan lain menggunakan cara ini adalah penentuan nilai property bisa dilakukan dengan tidak berurutan. Contohnya:
-
-`var`` s4 ``=`` ``student``{name: ``"wayne"``, grade: ``2``}`
-
-`var`` s5 ``=`` ``student``{grade: ``2``, name: ``"bruce"``}`
-
+```go
+var s4 = student{name: "wayne", grade: 2}
+var s5 = student{grade: 2, name: "bruce"}
+```
 ### 2.12.A.4. Variabel Objek Pointer
 
 Objek yang dibuat dari tipe struct bisa diambil nilai pointer-nya, dan bisa disimpan pada variabel objek yang bertipe struct pointer. Contoh penerapannya:
 
-```
+```go
 var s1 = student{name: "KEvin", grade: 2}
 
 var s2 *student = &s1
@@ -1397,7 +1354,7 @@ Meskipun s2 bukan variabel asli, property nya tetap bisa diakses seperti biasa. 
 
 **Embedded** struct adalah mekanisme untuk menempelkan sebuah struct sebagai properti struct lain. Agar lebih mudah dipahami, mari kita bahas kode berikut
 
-```
+```go
 package main
 
 import "fmt"
@@ -1434,7 +1391,7 @@ Khusus untuk properti yang bukan merupakan properti asli (melainkan properti tur
 
 Jika salah satu nama properti sebuah struct memiliki kesamaan dengan properti milik struct lain yang di-embed, maka pengaksesan property-nya harus dilakukan secara eksplisit atau jelas. Silakan lihat kode berikut agar lebih jelas.
 
-```
+```go
 package main
 
 import "fmt"
@@ -1467,7 +1424,7 @@ Struct person di-embed ke dalam struct student, dan kedua struct tersebut kebetu
 
 Pengisian nilai property sub-struct bisa dilakukan dengan langsung memasukkan variabel objek yang tercetak dari struct yang sama.
 
-```
+```go
 var p1 = person{name: "Kevin", age: 21}
 var s1 = student{person: p1, grade: 2}
 
@@ -1479,7 +1436,7 @@ fmt.Println("grade :", s1.grade)
 
 Anonymous struct adalah struct yang tidak dideklarasikan di awal sebagai tipe data baru, melainkan langsung ketika pembuatan objek. Teknik ini cukup efisien digunakan pada *use case* pembuatan variabel objek yang struct-nya hanya dipakai sekali.
 
-```
+```go
 package main
 
 import "fmt"
@@ -1506,7 +1463,7 @@ Pada kode di atas, variabel s1 langsung diisi objek anonymous struct yang memili
 
 Salah satu aturan yang perlu diingat dalam pembuatan anonymous struct adalah, deklarasi harus diikuti dengan inisialisasi. Bisa dilihat pada s1 setelah deklarasi struktur struct, terdapat kurung kurawal untuk inisialisasi objek. Meskipun nilai tidak diisikan di awal, kurung kurawal tetap harus ditulis.
 
-```
+```go
 var s1 = struct {
     person
     grade int
@@ -1525,7 +1482,7 @@ var s2 = struct {
 
 Slice dan struct bisa dikombinasikan seperti pada slice dan map, caranya penggunaannya-pun mirip, cukup tambahkan tanda [] sebelum tipe data pada saat deklarasi.
 
-```
+```go
 type person struct {
     name string
     age  int
@@ -1545,7 +1502,7 @@ for _, student := range allStudents {
 
 Anonymous struct bisa dijadikan sebagai tipe sebuah slice. Dan nilai awalnya juga bisa diinisialisasi langsung pada saat deklarasi. Berikut adalah contohnya:
 
-```
+```go
 var allStudents = []struct {
     person
     grade int
@@ -1563,7 +1520,7 @@ for _, student := range allStudents {
 
 Cara lain untuk deklarasi anonymous struct adalah dengan menggunakan keyword var.
 
-```
+```go
 var student struct {
     person
     grade int
@@ -1574,7 +1531,7 @@ student.grade = 2
 ```
 Statement type student struct adalah contoh cara deklarasi struct. Maknanya akan berbeda ketika keyword type diganti var, seperti pada contoh di atas var student struct, yang artinya dicetak sebuah objek dari anonymous struct kemudian disimpan pada variabel bernama student. Deklarasi anonymous struct menggunakan metode ini juga bisa dilakukan dengan disertai inisialisasi data.
 
-```
+```go
 // hanya deklarasi
 var student struct {
     grade int
@@ -1591,7 +1548,7 @@ var student = struct {
 
 Nested struct adalah anonymous struct yang di-embed ke sebuah struct. Deklarasinya langsung di dalam struct peng-embed. Contoh:
 
-```
+```go
 type student struct {
     person struct {
         name string
@@ -1606,26 +1563,21 @@ Teknik ini biasa digunakan ketika decoding data **JSON** yang struktur datanya c
 ### 2.12.A.13. Deklarasi Dan Inisialisasi Struct Secara Horizontal
 
 Deklarasi struct bisa dituliskan secara horizontal, caranya bisa dilihat pada kode berikut:
-
-`type`` ``person`` ``struct`` { name ``string``; age ``int``; hobbies []``string`` }`
-
+```go
+type person struct { name string; age int; hobbies []string }
+```
 Tanda semi-colon (;) digunakan sebagai pembatas deklarasi poperty yang dituliskan secara horizontal. Inisialisasi nilai juga bisa dituliskan dengan metode ini. Contohnya:
-
-`var`` p1 ``=`` ``struct`` { name ``string``; age ``int`` } { ``age``: ``22``, ``name``: ``"Kevin"`` }`
-
-`var`` p2 ``=`` ``struct`` { name ``string``; age ``int`` } { ``"ethan"``, ``23`` }`
-
+```go
+var p1 = struct { name string; age int } { age: 22, name: "Kevin" }
+var p2 = struct { name string; age int } { "ethan", 23 }
+```
 ### 2.12.A.14. Tag property dalam struct
 
 Tag merupakan informasi opsional yang bisa ditambahkan pada property struct.
-
-`type`` ``person`` ``struct`` {`
-
-`    name ``string`` ``<code>tag1</code>`
-
-`    age  ``int``    ``<code>tag2</code>`
-
-```
+```go
+type person struct {
+  name string <code>tag1</code>
+  age  int    <code>tag2</code>
 }
 ```
 Tag biasa dimanfaatkan untuk keperluan encode/decode data. Informasi tag juga bisa diakses lewat reflect. Nantinya akan ada pembahasan yang lebih detail mengenai pemanfaatan tag dalam struct, terutama ketika sudah masuk chapter JSON
@@ -1634,7 +1586,7 @@ Tag biasa dimanfaatkan untuk keperluan encode/decode data. Informasi tag juga bi
 
 Sebuah tipe data, seperti struct, bisa dibuatkan alias baru, caranya dengan type NamaAlias = TargetStruct. Contoh:
 
-```
+```go
 type Person struct {
     name string
     age  int
@@ -1647,18 +1599,15 @@ var p2 = People{"KEvin", 21}
 fmt.Println(p2)
 ```
 Pada kode di atas, sebuah alias bernama People dibuat untuk struct Person. Casting dari objek (yang dicetak lewat struct tertentu) ke tipe yang merupakan alias dari struct pencetak, hasilnya selalu valid. Berlaku juga sebaliknya.
-
-`people ``:=`` ``People``{``"KEvin"``, ``21``}`
-
-`fmt.``Println``(``Person``(people))`
-
-`person ``:=`` ``Person``{``"KEvin"``, ``21``}`
-
-`fmt.``Println``(``People``(person))`
-
+```go
+people := People{"KEvin", 21}
+fmt.Println(Person(people))
+person := Person{"KEvin", 21}
+fmt.Println(People(person))
+```
 Pembuatan struct baru juga bisa dilakukan lewat teknik type alias. Silakan perhatikan kode berikut.
 
-```
+```go
 type People1 struct {
     name string
     age  int
@@ -1671,11 +1620,10 @@ type People2 = struct {
 Struct People1 dideklarasikan, kemudian struct alias People2 juga dideklarasikan. Struct People2 merupakan alias dari anonymous struct. Penggunaan teknik type alias untuk anonymous struct menghasilkan output yang ekuivalen dengan pendeklarasian struct. 
 
 Teknik type alias ini tidak dirancang hanya untuk pembuatan alias pada tipe struct saja, semua jenis tipe data bisa dibuatkan alias. Contohnya seperti pada kode berikut, ada tipe data baru bernama Number yang merupakan alias dari tipe data int.
-
-`type`` ``Number`` ``=`` ``int`
-
-`var`` num ``Number`` ``=`` ``12`
-
+```go
+type Number = int
+var num Number = 12
+```
 ## B. Interface
 
 Interface adalah definisi suatu kumpulan method yang tidak memiliki isi, jadi hanya definisi header/schema-nya saja. Kumpulan method tersebut ditulis dalam satu block interface dengan nama tertentu.
@@ -1686,7 +1634,7 @@ Interface merupakan tipe data. Objek bertipe interface memiliki zero value yaitu
 
 Untuk menerapkan interface, pertama siapkan deklarasi tipe baru menggunakan keyword type dan tipe data interface lalu siapkan juga isinya (definisi method-nya).
 
-```
+```go
 package main
 
 import "fmt"
@@ -1703,7 +1651,7 @@ Dengan adanya interface hitung ini, maka perhitungan luas dan keliling bangun da
 
 Selanjutnya, siapkan struct bangun datar lingkaran, struct ini memiliki definisi method yang sebagian adalah ada di interface hitung.
 
-```
+```go
 type lingkaran struct {
     diameter float64
 }
@@ -1722,7 +1670,7 @@ func (l lingkaran) keliling() float64 {
 ```
 Struct lingkaran memiliki tiga buah method yaitu jariJari(), luas(), dan keliling(). Berikutnya, siapkan struct bangun datar persegi berikut:
 
-```
+```go
 type persegi struct {
     sisi float64
 }
@@ -1737,7 +1685,7 @@ func (p persegi) keliling() float64 {
 ```
 Perbedaan struct persegi dengan lingkaran terletak pada method jariJari(). Struct persegi tidak memiliki method tersebut. Tetapi meski demikian, variabel objek hasil cetakan 2 struct ini akan tetap bisa ditampung oleh variabel cetakan interface hitung, karena dua method yang ter-definisi di interface tersebut juga ada pada struct persegi dan lingkaran, yaitu method luas() dan keliling(). Sekarang buat implementasi perhitungan di fungsi main().
 
-```
+```go
 func main() {
     var bangunDatar hitung
 
@@ -1764,13 +1712,11 @@ Method jariJari() pada struct lingkaran tidak akan bisa diakses karena tidak ter
 Untuk mengakses method yang tidak ter-definisi di interface, variabel-nya harus di-casting terlebih dahulu ke tipe asli variabel konkritnya (pada kasus ini tipenya lingkaran), setelahnya method akan bisa diakses.
 
 Cara casting objek interface sedikit unik, yaitu dengan menuliskan nama tipe tujuan dalam kurung, ditempatkan setelah nama interface dengan menggunakan notasi titik (seperti cara mengakses property, hanya saja ada tanda kurung nya). Contohnya bisa dilihat di kode berikut. Statement bangunDatar.(lingkaran) adalah contoh casting pada objek interface.
-
-`var`` bangunDatar ``hitung`` ``=`` ``lingkaran``{``14.0``}`
-
-`var`` bangunLingkaran ``lingkaran`` ``=`` bangunDatar.(``lingkaran``)`
-
-`bangunLingkaran.``jariJari``()`
-
+```go
+var bangunDatar hitung = lingkaran{14.0}
+var bangunLingkaran lingkaran = bangunDatar.(lingkaran)
+bangunLingkaran.jariJari()
+```
 *Metode casting pada tipe data interface biasa disebut dengan ****type assertion. ***Perlu diketahui juga, jika ada interface yang menampung objek konkrit yang mana struct-nya tidak memiliki salah satu method yang terdefinisi di interface, maka error akan muncul. Intinya kembali ke aturan awal, variabel interface hanya bisa menampung objek yang minimal memiliki semua method yang terdefinisi di interface tersebut.
 
 ### 2.12.B.2. Embedded Interface
@@ -1779,7 +1725,7 @@ Interface bisa di-embed ke interface lain, sama seperti struct. Cara penerapanny
 
 Pada contoh berikut, disiapkan interface bernama hitung2d dan hitung3d. Kedua interface tersebut kemudian di-embed ke interface baru bernama hitung.
 
-```
+```go
 package main
 
 import "fmt"
@@ -1803,7 +1749,7 @@ Interface hitung2d berisikan method untuk kalkulasi luas dan keliling, sedang hi
 
 Next, siapkan struct baru bernama kubus yang memiliki method luas(), keliling(), dan volume().
 
-```
+```go
 type kubus struct {
     sisi float64
 }
@@ -1824,7 +1770,7 @@ Objek hasil cetakan struct kubus di atas, nantinya akan ditampung oleh objek cet
 
 Terakhir, buat implementasi-nya di fungsi main().
 
-```
+```go
 func main() {
     var bangunRuang hitung = &kubus{4}
 
