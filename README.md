@@ -1,588 +1,348 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/tPVgLsdF)
-| Name | NRP | Class |
-| ---- | --- | ----- |
-| Very Ardiansyah | 5025241026 | B |
+# Socket Server - Multi-Method Implementation
 
-## Task 1
+Proyek ini adalah implementasi server TCP yang mendukung fitur group chat dan transfer file (upload/download). Server diimplementasikan dalam empat metode berbeda: sinkronus, thread, select, dan poll. Semua server kompatibel dengan satu file klien yang sama.
 
-- Flag
+---
 
-  `JARKOM25{Ja0G_Bbbb4ng3t_S1_UTP661J0YUR9KCGVSJO871RR6CWXA60xl0vel1x98yzvk5shf410v7u2ovbb7_2f3f77bae916a5d950e9b3f4e07666f5}`
+## Daftar File
 
-> a. Berapa banyak packet yang terekam pada file pcapng?
+| File | Deskripsi |
+|---|---|
+| `client.py` | Klien untuk semua varian server |
+| `server-sync.py` | Server sinkronus, satu klien sekaligus |
+| `server-thread.py` | Server multi-klien berbasis thread |
+| `server-select.py` | Server multi-klien berbasis `select` |
+| `server-poll.py` | Server multi-klien berbasis `poll` |
 
-> _a. How many packets are recorded in the pcapng file?_
+---
 
-**Answer:** `9596`
+## Protokol Komunikasi
 
-- Filter expression
+Semua pesan JSON dikemas dengan format berikut:
 
-  `-`
+```
+[4 bytes big-endian: panjang payload JSON] [N bytes: payload JSON]
+```
 
-- Explanation
+Header 4 byte dikemas menggunakan `struct.pack('>I', length)` dan dibuka kembali dengan `struct.unpack('>I', header)`. Pendekatan ini diperlukan karena TCP adalah stream protocol, bukan message protocol, sehingga tanpa header panjang tidak ada cara untuk mengetahui batas antar pesan.
 
-  Dapat dilihat dari gambar berikut ada tuisan `"Packet : 9596 ...."` dibagian bawah kanan
-  <img width="1920" height="1080" alt="Screenshot from 2025-09-13 11-32-32" src="https://github.com/user-attachments/assets/76d3c08f-93de-4313-9a46-1160f8186554" />
+Transfer file (upload/download) dilakukan dengan mengirim raw bytes langsung ke socket setelah kedua pihak sepakat melalui pesan JSON. Tidak ada framing tambahan saat transfer file berlangsung.
 
-  
+---
 
-- Output result
+## Struktur Pesan JSON
 
-  <img width="794" height="207" alt="image" src="https://github.com/user-attachments/assets/45047157-603e-40b4-bf6f-97910b892d0d" />
+### Dari klien ke server
 
+| type | Field tambahan | Keterangan |
+|---|---|---|
+| `join` | `username` | Pesan pertama setelah koneksi |
+| `chat` | `message` | Pesan teks ke semua klien |
+| `command` | `command: "list"` | Minta daftar file |
+| `command` | `command: "upload"`, `filename`, `filesize` | Mulai upload |
+| `command` | `command: "download"`, `filename` | Minta download |
 
-<br>
-<br>
+### Dari server ke klien
 
-> b. Ada berapa jenis protocol (total) yang terekam pada traffic?
+| type | Field tambahan | Keterangan |
+|---|---|---|
+| `info` | `message` | Notifikasi sistem |
+| `error` | `message` | Pesan error |
+| `chat` | `sender`, `message` | Pesan dari klien lain |
+| `list_result` | `files` | Daftar file di server |
+| `upload_ready` | `filename` | Server siap terima bytes |
+| `upload_done` | `filename`, `message` | Konfirmasi upload selesai |
+| `download_ready` | `filename`, `filesize` | Server siap kirim bytes |
 
-> _b. How many types of protocol (totals) are recorded in the traffic?_
+---
 
-**Answer:** `12`
+## client.py
 
-- Filter expression
+### Konstanta dan Direktori
 
-  `-`
+```python
+HOST = '127.0.0.1'
+PORT = 5000
+CLIENT_FILES_DIR = 'client_files'
+BUFFER_SIZE = 4096
+```
 
-- Explanation
+Semua file yang akan diupload harus berada di folder `client_files/`. File yang didownload juga disimpan ke folder yang sama. Folder dibuat otomatis jika belum ada melalui `ensure_client_dir()`.
 
-  Gunakan bar atas untuk masuk ke `Statistics -> Protocol Hierarchy` dan hitung dari atas kebawah ada berapa, dapat terlihat dari gambar ada 12
-  <img width="1920" height="1080" alt="Screenshot from 2025-09-13 11-32-12" src="https://github.com/user-attachments/assets/e3a83d68-a188-4b82-8ac9-2d7b565e1efa" />
+### send_json dan recv_json
 
+`send_json` mengonversi dict Python ke JSON string, encode ke UTF-8, lalu prepend header 4 byte berisi panjang payload. Keduanya digabung dan dikirim sekaligus dengan `sendall` untuk memastikan tidak ada partial send.
 
-- Output result
+`recv_json` membaca tepat 4 byte header terlebih dahulu, mengekstrak panjang payload, lalu masuk ke loop yang membaca chunk dari socket sampai akumulasi byte mencapai panjang yang diharapkan. Loop ini penting karena satu panggilan `recv` tidak menjamin seluruh payload langsung tersedia.
 
-  <img width="794" height="251" alt="image" src="https://github.com/user-attachments/assets/8034973a-18b5-4b83-abda-be6612575211" />
+### send_file_bytes dan recv_file_bytes
 
+`send_file_bytes` membuka file dalam mode binary, membaca per chunk sebesar `BUFFER_SIZE` (4096 bytes), dan mengirimkan masing-masing chunk dengan `sendall`. Loop berakhir saat `f.read` mengembalikan bytes kosong.
 
-<br>
-<br>
+`recv_file_bytes` menerima bytes dari socket dan menulis ke file. Counter `received` dilacak dan setiap chunk yang diterima dikurangi dari total. Parameter `remaining = filesize - received` digunakan sebagai batas maksimum pada setiap `recv` agar klien tidak membaca lebih dari ukuran file yang diharapkan, mencegah terbacanya byte awal dari pesan JSON berikutnya.
 
-> c. Ada berapa jenis protocol berbasis TCP yang terekam pada traffic?
+### handle_server_messages (thread penerima)
 
-> _c. How many types of TCP-based applications protocol are recorded in the traffic?_
+Thread ini berjalan sebagai daemon dan terus memanggil `recv_json` dalam loop. Setiap pesan yang diterima diproses berdasarkan field `type`:
 
-**Answer:** `8`
+- `chat`: Mencetak pesan beserta nama pengirim.
+- `info` / `error`: Mencetak notifikasi sistem atau error.
+- `list_result`: Mencetak daftar file. Jika list kosong, ditampilkan pesan khusus.
+- `upload_ready`: Membaca file dari `client_files/` dan mengirim raw bytes-nya ke server menggunakan `send_file_bytes`. Ini dipicu oleh respons server, bukan langsung setelah `/upload` diketik, karena klien harus menunggu server siap terlebih dahulu.
+- `upload_done`: Mencetak konfirmasi bahwa file berhasil disimpan di server.
+- `download_ready`: Memanggil `recv_file_bytes` untuk menerima byte file dan menyimpannya ke `client_files/`. Ukuran file diketahui dari field `filesize` dalam pesan ini.
 
-- Filter expression
+Jika `recv_json` mengembalikan `None` (koneksi putus), loop berhenti dan thread berakhir.
 
-  `-`
+### input_loop (thread utama)
 
-- Explanation
+Membaca input dari terminal dalam loop tak terbatas menggunakan `input()`. Input kosong di-skip. Logika pengecekan perintah:
 
-  Gunakan bar atas untuk masuk ke `Statistics -> Protocol Hierarchy` dan hitung dari atas kebawah yang ada dibawah `"Transmission Control Protocol"` ada berapa, dapat terlihat dari gambar ada 8
-  <img width="1920" height="1080" alt="Screenshot from 2025-09-13 11-33-18" src="https://github.com/user-attachments/assets/c4a93bdb-6a38-42c1-a5be-b8bfbdd23426" />
+- `/list`: Mengirim pesan command `list` tanpa argumen tambahan.
+- `/upload <filename>`: Memvalidasi bahwa file ada di `client_files/` secara lokal sebelum mengirim apapun ke server. Jika file tidak ada, error ditampilkan dan tidak ada yang dikirim ke server. Jika ada, ukuran file diambil dengan `os.path.getsize` dan dikirim bersama nama file dalam pesan command `upload`.
+- `/download <filename>`: Mengirim command `download` dengan nama file. Tidak ada validasi lokal karena file ada di sisi server.
+- Input lain: Dikirim sebagai pesan `chat`.
 
+### main
 
-- Output result
+Membuat satu socket TCP, terhubung ke server, lalu mengirim pesan `join` dengan username. Thread daemon `handle_server_messages` distart, kemudian `input_loop` dijalankan di thread utama. Karena thread penerima bersifat daemon, thread ini otomatis berhenti saat thread utama selesai.
 
-  <img width="794" height="309" alt="image" src="https://github.com/user-attachments/assets/833e9a31-59cc-427b-a077-f729b221f2a3" />
+---
 
-  <br>
-  <br>
+## server-sync.py
 
-> d. Ada berapa banyak packet dengan protokol TCP murni yang terekam pada traffic (tanpa data)?
+Server paling sederhana. Seluruh operasi blocking, tidak ada konkurensi. Hanya mampu melayani satu klien dalam satu waktu karena `listen(1)` membatasi antrian koneksi dan loop utama tidak kembali ke `accept()` sebelum klien sebelumnya selesai.
 
-> _d. How many packets with pure TCP protocol are recorded in the traffic (without data)?_
+### send_json dan recv_json
 
-**Answer:** `3223`
+`send_json` membungkus `sendall` dalam try/except tanpa aksi pada exception. `recv_json` membaca header 4 byte lalu payload dalam loop, mengembalikan `None` jika terjadi error atau koneksi terputus.
 
-- Filter expression
+### send_file_bytes dan recv_file_bytes
 
-  `-`
+`send_file_bytes` membaca dan mengirim file per chunk. `recv_file_bytes` menerima byte dari socket sampai total `filesize` byte terpenuhi, menulis ke file secara bertahap, dan mengembalikan `True` atau `False` tergantung keberhasilan.
 
-- Explanation
+### handle_command
 
-  Gunakan bar atas untuk masuk ke `Statistics -> Protocol Hierarchy` dan lihat `End Packet` yang ada sebaris dengan `"Transmission Control Protocol"` ada berapa, dapat terlihat dari gambar ada 3223
-  <img width="1920" height="1080" alt="Screenshot from 2025-09-13 11-33-18" src="https://github.com/user-attachments/assets/235e5509-62d5-4e9d-be0a-68ff7c08496c" />
+Dipanggil setiap kali pesan bertipe `command` diterima. Memvalidasi socket ada di `clients` sebelum melanjutkan.
 
+- `list`: Membaca isi direktori `server_files/` dengan `os.listdir`, mengurutkannya, dan mengirim hasilnya.
+- `upload`: Mengambil nama file dengan `os.path.basename` untuk mencegah path traversal (misal: `../../etc/passwd` jadi `passwd`). Mengirim `upload_ready`, lalu langsung memanggil `recv_file_bytes` secara blocking. Jika gagal, file parsial dihapus.
+- `download`: Mengecek keberadaan file dengan `os.path.exists`. Jika ada, mengirim `download_ready` beserta ukuran file, lalu memanggil `send_file_bytes`. Semua berlangsung secara blocking sebelum fungsi kembali.
 
-- Output result
+### start_server
 
-  <img width="794" height="376" alt="image" src="https://github.com/user-attachments/assets/5b72bf9e-c706-4b1b-9a9d-bf3e01df0302" />
+Membuat socket dengan `SO_REUSEADDR` agar port bisa langsung dipakai ulang setelah server restart. Loop luar memanggil `accept()` yang memblokir hingga klien terhubung. Setelah terhubung, klien didaftarkan ke dict `clients` dengan `username: None`.
 
+Loop dalam membaca pesan JSON satu per satu. Pesan pertama selalu diperlakukan sebagai registrasi: jika `username` masih `None`, username diekstrak dan disimpan, `Welcome` dikirim, lalu `continue` kembali ke atas loop. Pesan selanjutnya diproses normal sebagai `chat` atau `command`.
 
-## Task 2
+Blok `finally` pada loop dalam memastikan socket klien selalu ditutup dan dihapus dari `clients` meskipun terjadi exception, sebelum server kembali ke `accept()`.
 
-- Flag
+---
 
-  `JARKOM25{N1c3_0ne_b4nggg_MPWWBVFAKDyuMM13yhsvijlqhgidqtpdhuhpkc3r4t0ps12036308977945299358_fbcc76e02b38befb57e8b505c0e68710}`
+## server-thread.py
 
-> a. Berapa banyak packet berhasil yang berbasis murni TCP dan memiliki flag [ACK]?
+Setiap klien ditangani oleh thread terpisah, sehingga server dapat melayani banyak klien simultan. Dictionary `clients` diakses dari banyak thread sehingga semua operasi baca-tulis ke `clients` menggunakan `clients_lock`.
 
-> _a. How many packets succeed that are pure TCP based and have [ACK] flag?_
+### send_json, recv_json, send_file_bytes, recv_file_bytes
 
-**Answer:** `3209`
+`send_json` dan `recv_json` dibungkus try/except yang mengembalikan `None` pada error, bukan raise exception, agar thread klien bisa mendeteksi koneksi putus dengan memeriksa nilai kembalian saja.
 
-- Filter expression
+`send_file_bytes` dan `recv_file_bytes` identik dengan server-sync, namun masing-masing berjalan di thread yang berbeda sehingga pemblokiran di satu thread tidak mempengaruhi klien lain.
 
-  `tcp.len == 0 && !tcp.analysis.lost_segment && !tcp.analysis.retransmission && tcp.flags.ack == 1`
+### add_client dan remove_client
 
-- Explanation
+`add_client` mendaftarkan socket ke `clients` dengan lock. `remove_client` melakukan kebalikannya: mengambil username dengan lock, menghapus dari dict, menutup socket, lalu jika `announce=True` memanggil `broadcast` untuk memberitahu klien lain bahwa user telah keluar.
 
-  Gunakan Display Filter yang tercantum di atas untuk melakukan filtering pada packet yang ingin dicari. Dengan demikian akan terlihat apa yang ingin kita cari di kanan bawah dengan tulisan `"...Displayed : 3209 (33.4%)"` maka itulah jawabannya
-  <img width="1920" height="1080" alt="Screenshot from 2025-09-13 11-48-03" src="https://github.com/user-attachments/assets/8872c835-d417-4699-9deb-c1472d0712be" />
+### broadcast
 
+Mengambil snapshot list socket dari `clients` dengan lock, lalu melepas lock sebelum mulai mengirim. Ini penting karena `send_json` bisa memakan waktu dan memegang lock terlalu lama akan memblokir thread lain. Socket yang gagal dikumpulkan dalam list `disconnected` dan dikembalikan ke pemanggil untuk diproses, bukan langsung dihapus di dalam `broadcast` agar tidak terjadi rekursi lock.
 
-- Output result
+### start_upload dan finish_upload
 
-  <img width="794" height="200" alt="image" src="https://github.com/user-attachments/assets/99f4a7cd-d4e5-42b3-aeb6-97548b912a8b" />
+`start_upload` mengambil username dari `clients` dengan lock di awal, lalu mengirim `upload_ready` dan langsung memanggil `recv_file_bytes` secara blocking. Thread klien ini diblokir selama durasi upload berlangsung, tapi klien lain tidak terpengaruh karena masing-masing punya thread sendiri.
 
+`finish_upload` mengirim `upload_done` ke klien pengunggah dan memanggil `broadcast` untuk memberitahu semua klien lain bahwa file baru tersedia.
 
-  <br>
-  <br>
+### handle_command
 
-> b. Berapa banyak packet berhasil yang berbasis murni TCP yang hanya memiliki flag [ACK]?
+Sama seperti server-sync untuk `list`. Untuk `upload`, memanggil `start_upload`. Untuk `download`, mengambil ukuran file, mengirim `download_ready`, lalu memanggil `send_file_bytes` secara blocking di thread klien yang bersangkutan.
 
-> _b. How many packets succeed that are pure TCP based and have only [ACK] flag?_
+### client_thread
 
-**Answer:** `3172`
+Entry point setiap thread klien. Pesan pertama yang diterima adalah pesan `join`, username diambil, klien didaftarkan, `Welcome` dikirim, dan `broadcast` memberitahu klien lain. Kemudian masuk ke loop yang memanggil `recv_json` blocking. Pesan `chat` di-broadcast, pesan `command` diteruskan ke `handle_command`. Jika `recv_json` mengembalikan `None`, loop berhenti dan `remove_client` dipanggil untuk membersihkan state dan memberitahu klien lain.
 
-- Filter expression
+### start_server
 
-  `tcp.len == 0 && !tcp.analysis.lost_segment && !tcp.analysis.retransmission && tcp.flags.ack == 1 && tcp.flags.syn==0 && tcp.flags.fin == 0`
+Membuat socket dan masuk ke loop `accept()`. Setiap koneksi baru membuat thread daemon baru dengan target `client_thread`. Thread utama hanya bertugas menerima koneksi baru.
 
-- Explanation
+---
 
-  Gunakan Display Filter yang tercantum di atas untuk melakukan filtering pada packet yang ingin dicari. Dengan demikian akan terlihat apa yang ingin kita cari di kanan bawah dengan tulisan `"...Displayed : 3173 (33.1%)"` , angka ini akan kita kurangi 1 karena ada `"TCP ACKed unseen segment"` jadi jawabannya 3172
-  <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/257cc6bd-6b30-4ea8-a075-cef5175b2aee" />
+## server-select.py
 
+Server single-threaded yang menangani banyak klien menggunakan `select.select`. Tidak ada blocking I/O; semua socket diset ke mode non-blocking dengan `setblocking(False)`.
 
-- Output result
-<img width="794" height="293" alt="image" src="https://github.com/user-attachments/assets/9048c78f-3fd5-4e4a-ad17-c1e65ff60358" />
+### Struktur State Per Klien
 
-  
+```python
+clients[sock] = {
+    "username": None,
+    "address": addr,
+    "json_buffer": b"",
+    "expected_json_length": None,
+    "state": "json",          # "json" | "upload" | "download"
+    "upload_file": None,
+    "upload_filename": None,
+    "upload_remaining": 0,
+    "download_file": None,
+    "download_remaining": 0
+}
+```
 
-  <br>
-  <br>
+`json_buffer` menampung byte yang sudah diterima tapi belum membentuk pesan JSON lengkap. `expected_json_length` menyimpan panjang payload yang sedang ditunggu. `state` menentukan bagaimana byte mentah dari socket diperlakukan. `upload_remaining` dan `download_remaining` melacak sisa byte yang masih perlu diproses.
 
-> c. Berapa banyak packet berhasil yang berbasis murni TCP dan memiliki flag selain hanya [ACK]?
+### add_client, cleanup_upload_state, cleanup_download_state
 
-> _c. How many packets succeed that are pure TCP based and contain flags other than just [ACK] flag?_
+`add_client` mendaftarkan state awal klien. `cleanup_upload_state` menutup file handle upload yang terbuka, mereset semua field upload, dan mengembalikan `state` ke `"json"`. `cleanup_download_state` melakukan hal yang sama untuk sisi download.
 
-**Answer:** `49`
+### remove_client
 
-- Filter expression
+Dipanggil saat klien disconnect atau error. Memanggil `cleanup_upload_state` jika sedang upload dan menghapus file parsial. Memanggil `cleanup_download_state` jika sedang download. Menghapus socket dari list `inputs` dan `outputs`. Jika klien sudah punya username, `broadcast` dijalankan untuk memberitahu klien lain.
 
-  `tcp.len == 0 && !tcp.analysis.lost_segment && !tcp.analysis.retransmission &&  tcp.flags.syn==1 `
-  `tcp.len == 0 && !tcp.analysis.lost_segment && !tcp.analysis.retransmission &&  tcp.flags.fin==1 `
+### broadcast
 
-- Explanation
+Iterasi semua socket di `clients` dan mengirim JSON. Hanya mengirim ke klien yang sudah punya username (sudah login). Socket yang gagal dikumpulkan dan dikembalikan sebagai list untuk dibersihkan oleh pemanggil.
 
- Gunakan Display Filter yang tercantum di atas untuk melakukan filtering pada packet yang ingin dicari. Dengan demikian akan terlihat apa yang ingin kita cari di kanan bawah dengan tulisan `"...Displayed : 24 (0.3%)"` untuk filter pertama dan `"...Displayed : 24 (0.3%)"` untuk filter kedua , angka ini akan kita tambahkan 1 karena ada `"TCP ACKed unseen segment"` jadi totalnya adalah 49
-  <img width="1920" height="1080" alt="Screenshot from 2025-09-13 12-15-21" src="https://github.com/user-attachments/assets/354cbd58-e559-46f0-bb31-b5e3fbd9dd66" />
-  <img width="1920" height="1080" alt="Screenshot from 2025-09-13 12-17-50" src="https://github.com/user-attachments/assets/fe54a72e-47a5-4446-b921-cc55b525db41" />
+### parse_json_messages
 
+Dipanggil setiap kali ada data baru di `json_buffer`. Bekerja dalam dua tahap berulang:
 
-- Output result
+Tahap pertama: jika `expected_json_length` belum diset dan buffer sudah punya minimal 4 byte, 4 byte pertama diambil sebagai header dan panjang payload disimpan ke `expected_json_length`. Buffer dipotong 4 byte dari depan.
 
-  <img width="794" height="357" alt="image" src="https://github.com/user-attachments/assets/d4b05d03-f9f6-4ec5-aa97-731662ac6646" />
+Tahap kedua: jika `expected_json_length` sudah diset dan buffer sudah punya cukup byte, payload sebesar `expected_json_length` diambil dari depan buffer, di-decode sebagai JSON, dan ditambahkan ke list hasil. `expected_json_length` direset ke `None` dan loop kembali ke tahap pertama untuk memeriksa apakah ada pesan berikutnya di buffer.
 
+Loop berhenti ketika buffer tidak cukup untuk salah satu tahap. Ini menangani kasus di mana satu `recv` mengandung beberapa pesan sekaligus, atau pesan yang datang terpotong-potong.
 
-  <br>
-  <br>
+### start_upload
 
-## Task 3
+Membuka file di `server_files/` untuk ditulis, menyimpan handle-nya di state klien, mengeset `state` ke `"upload"`, dan menyimpan `filesize` sebagai `upload_remaining`. Mengirim `upload_ready` ke klien sebagai sinyal untuk mulai mengirim bytes.
 
-- Flag
+### finish_upload
 
-  `JARKOM25{W0w_Y0uU_h4V33e_d0n3_444_90od_j0bB_OGOP9g0dl1k3cg81nawc8svvricrwlietj_b0964177f3da6a889fd343b29e51c77b}`
+Memanggil `cleanup_upload_state` yang menutup file, mengirim `upload_done` ke uploader, dan memanggil `broadcast` ke semua klien. Mengembalikan list klien yang gagal dibroadcast.
 
-> a. Pada port berapa client telnet terbuka?
+### handle_command
 
-> _a. In what port is the telnet client open?_
+- `list`: Mengirim isi direktori yang sudah diurutkan.
+- `upload`: Memanggil `start_upload`.
+- `download`: Membuka file, menyimpan handle di state klien, mengeset `state` ke `"download"`, mengirim `download_ready`, dan menambahkan socket ke list `outputs` agar `select` mulai memantau kesiapan kirim socket ini.
 
-**Answer:** `54184`
+### handle_message
 
-- Filter expression
+Dispatcher pesan JSON yang sudah diparsing. Jika `username` masih `None`, pesan pertama dianggap sebagai `join` dan username diekstrak. Setelah login, memproses `chat` (broadcast ke semua) atau `command` (ke `handle_command`).
 
-  `telnet`
+### handle_upload_bytes
 
-- Explanation
+Dipanggil saat `state` klien adalah `"upload"` dan ada data mentah dari socket. Menghitung berapa byte yang boleh ditulis dengan `min(len(data), upload_remaining)`. Byte kelebihan (`leftover`) di luar ukuran file disimpan kembali ke `json_buffer` karena sudah merupakan awal dari pesan JSON berikutnya.
 
-  Gunakan Display Filter yang tercantum di atas untuk melakukan filtering pada packet yang ingin dicari. Lalu gunakan bar atas untuk masuk ke `Statistiscs -> Conversation -> TCP `disana akan terlihat di `port A `yakni client dengan angka 54184
-  <img width="1920" height="1080" alt="Screenshot from 2025-09-13 12-19-28" src="https://github.com/user-attachments/assets/7342d15c-e684-4f32-82a0-626e049708c6" />
+Setelah menulis ke file, `upload_remaining` dikurangi. Jika sudah nol, `finish_upload` dipanggil. Kemudian jika ada `leftover` dan `state` sudah kembali ke `"json"`, `parse_json_messages` dipanggil untuk memproses pesan yang sudah ada di buffer.
 
+### handle_download_bytes
 
-- Output result
+Dipanggil saat socket klien masuk ke daftar `writable` dari `select`. Membaca satu chunk dari file handle dan mengirimkannya ke socket. Jika `send` mengirim lebih sedikit dari yang dibaca (partial send), file pointer diputar mundur sebesar selisihnya agar data yang belum terkirim dikirim ulang pada pemanggilan berikutnya:
 
-  <img width="794" height="202" alt="image" src="https://github.com/user-attachments/assets/9b7f05e2-d3a6-4570-81d3-0fef76ae95cf" />
+```python
+client["download_file"].seek(
+    client["download_file"].tell() - (len(chunk) - sent)
+)
+```
 
+Jika file sudah habis atau `download_remaining` mencapai nol, `cleanup_download_state` dipanggil dan socket dikeluarkan dari `outputs`. `BlockingIOError` di-catch dan di-ignore karena socket non-blocking dapat mengembalikan error ini saat buffer kirim sedang penuh, dan cukup ditunggu sampai `select` melaporkan socket siap kembali.
 
-  <br>
-  <br>
+### start_server dan event loop
 
-> b. Berapa byte file response yang dikirim dari server?
+Socket server diset non-blocking. List `inputs` berisi server socket dan semua client socket. List `outputs` hanya berisi socket yang sedang dalam mode download.
 
-> _b. How many bytes of the response files are sent from the server?_
+`select.select(inputs, outputs, inputs)` memblokir sampai minimal satu socket siap. Untuk setiap socket di `readable`:
 
-**Answer:** `1449`
+- Jika itu server socket, `accept()` klien baru, set non-blocking, daftarkan ke `clients`, dan tambahkan ke `inputs`.
+- Jika klien socket, baca data dengan `recv`. Jika `state` adalah `"upload"`, data diteruskan ke `handle_upload_bytes`. Jika tidak, data ditambahkan ke `json_buffer` dan `parse_json_messages` dijalankan. Ada pengecekan setelah setiap pesan diproses: jika `state` berubah menjadi `"upload"` dan buffer tidak kosong, sisa buffer langsung diproses sebagai upload bytes tanpa menunggu `recv` berikutnya.
 
-- Filter expression
+Untuk setiap socket di `writable`, jika `state`-nya `"download"`, `handle_download_bytes` dipanggil. Untuk socket di `exceptional`, `remove_client` dipanggil.
 
-  `telnet`
+---
 
-- Explanation
+## server-poll.py
 
-  Gunakan Display Filter yang tercantum di atas untuk melakukan filtering pada packet yang ingin dicari. Lalu klik kanan manapun dari daftar yang terdisplay masuk ke `Follow -> TCP Stream` kemudian dibagian kiri bawah akan ada `"Entire Conversation"` klik untuk ubah jadi pilihan dimana server mengirim ke client maka akan didapat jawaban 1449
-  <img width="1920" height="1080" alt="Screenshot from 2025-09-13 12-20-20" src="https://github.com/user-attachments/assets/5ba3e11f-1a19-4121-acf9-2ce020451cbc" />
+Fungsionalitas identik dengan `server-select.py`. Perbedaannya hanya pada mekanisme event notification yang digunakan: `select.poll` sebagai pengganti `select.select`. `poll` hanya tersedia di Unix/Linux.
 
+### Perbedaan Arsitektur dari select
 
-- Output result
+`select.select` menerima list object socket Python secara langsung. `select.poll` bekerja dengan file descriptor integer, sehingga diperlukan dictionary tambahan `fd_to_socket` untuk memetakan file descriptor ke object socket:
 
-  <img width="794" height="243" alt="image" src="https://github.com/user-attachments/assets/48304e89-42ad-48c8-bbbf-642bcf724553" />
+```python
+fd_to_socket = {}
+```
 
+Saat klien terhubung, `client_sock.fileno()` digunakan untuk mendapatkan file descriptor, disimpan ke `fd_to_socket`, lalu didaftarkan ke poller:
 
-  <br>
-  <br>
+```python
+poller.register(client_fd, select.POLLIN | select.POLLHUP | select.POLLERR)
+```
 
-> c. Apa username yang digunakan client telnet untuk berhubungan dengan server?
+`select.select` menggunakan tiga list terpisah (readable, writable, exceptional). `poll` menggunakan satu bitmask event per socket:
 
-> _c. What telnet client's username is used to connect with the server?_
+| Flag | Keterangan |
+|---|---|
+| `POLLIN` | Data tersedia untuk dibaca |
+| `POLLOUT` | Socket siap menerima data kiriman |
+| `POLLHUP` | Koneksi terputus di sisi remote |
+| `POLLERR` | Error pada socket |
+| `POLLNVAL` | File descriptor tidak valid |
 
-**Answer:** `jovyan`
+### Modifikasi Event Saat Download
 
-- Filter expression
+Pada `select`, socket ditambahkan ke list `outputs` saat download dimulai dan dihapus saat selesai. Pada `poll`, event mask socket dimodifikasi dengan `poller.modify`:
 
-  `telnet`
+```python
+# saat download dimulai (di handle_command)
+poller.modify(fd, select.POLLIN | select.POLLOUT | select.POLLHUP | select.POLLERR)
 
-- Explanation
+# saat download selesai (di handle_download_bytes)
+poller.modify(fd, select.POLLIN | select.POLLHUP | select.POLLERR)
+```
 
-  Gunakan Display Filter yang tercantum di atas untuk melakukan filtering pada packet yang ingin dicari. Lalu klik kanan manapun dari daftar yang terdisplay masuk ke `Follow -> TCP Stream` kemudian dibagian atas ada tulisan `"login : jovyan"` itulah usernamenya
-  <img width="1920" height="1080" alt="Screenshot from 2025-09-13 12-20-20" src="https://github.com/user-attachments/assets/617556ad-6df8-4112-a499-66a7317006e5" />
+### remove_client
 
+Selain menghapus dari `clients`, juga harus memanggil `poller.unregister(fd)` secara eksplisit dan menghapus entri dari `fd_to_socket`. Jika tidak, poller akan terus melaporkan event untuk file descriptor yang sudah tidak valid.
 
-- Output result
+### Event Loop
 
-  <img width="794" height="287" alt="image" src="https://github.com/user-attachments/assets/884992f2-8d7f-466a-96dc-4cad3b32ba68" />
+`poller.poll()` memblokir sampai ada event dan mengembalikan list `(fd, event)`. Setiap fd di-lookup ke socket melalui `fd_to_socket`. Pengecekan dilakukan dengan bitwise AND terhadap bitmask:
 
+```python
+if event & (select.POLLHUP | select.POLLERR | select.POLLNVAL):
+    remove_client(...)
 
-  <br>
-  <br>
+if event & select.POLLIN:
+    # baca data
 
-> d. Apa password client telnet?
+if event & select.POLLOUT:
+    # kirim data download
+```
 
-> _d. What is the telnet client's password?_
+Logika setelah pengecekan event identik dengan `server-select.py`: baca data ke buffer, parse JSON, atau proses upload/download bytes.
 
-**Answer:** `123`
+---
 
-- Filter expression
+## Perbandingan Metode
 
-  `telnet`
-
-- Explanation
-
-  Gunakan Display Filter yang tercantum di atas untuk melakukan filtering pada packet yang ingin dicari. Lalu klik kanan manapun dari daftar yang terdisplay masuk ke `Follow -> TCP Stream` kemudian dibagian atas ada tulisan `"Password : 123"` itulah passwordnya
-  <img width="1920" height="1080" alt="Screenshot from 2025-09-13 12-22-07" src="https://github.com/user-attachments/assets/29eebdde-823d-4e6b-a52b-f66815974ef7" />
-
-
-- Output result
-
-  <img width="794" height="351" alt="image" src="https://github.com/user-attachments/assets/c6876076-6cc3-411a-9817-e349ea440205" />
-
-
-  <br>
-  <br>
-
-## Task 4
-
-- Flag
-
-  `JARKOM25{G04t__a4n4liz333er_7K2X4KUGDEDFYJT6ONSKfr0ga7k7xe39lzenzj2r3ys3539588057_eb012b3df9df2baff54321cb950ed40c}`
-
-> a. Apa perintah pertama yang ditulis client pada koneksi telnet?
-
-> _a. What is the first command that client wrote on telnet connection?_
-
-**Answer:** `echo`
-
-- Filter expression
-
-  `telnet`
-
-- Explanation
-Gunakan Display Filter yang tercantum di atas untuk melakukan filtering pada packet yang ingin dicari. Lalu klik kanan manapun dari daftar yang terdisplay masuk ke `Follow -> TCP Stream` kemudian dibagian yang saya blok itu ada petunjuk bahwa client mengetikkan `"echo"` untuk pertama kalinya
-<img width="1920" height="1080" alt="Screenshot from 2025-09-13 12-22-07" src="https://github.com/user-attachments/assets/1812dafb-e8e6-4d06-a4e7-d6b96ea66d03" />
-
-
-- Output result
-
-  <img width="794" height="203" alt="image" src="https://github.com/user-attachments/assets/4659ef15-6c6e-41ad-8e1b-d966ea5b5d53" />
-
-
-  <br>
-  <br>
-
-> b. Apa nama file .txt di server (ditulis bersama ekstensinya)?
-
-> _b. What is the name of .txt file on the server (write with the extension)?_
-
-**Answer:** `test.txt`
-
-- Filter expression
-
-  `telnet`
-
-- Explanation
-Gunakan Display Filter yang tercantum di atas untuk melakukan filtering pada packet yang ingin dicari. Lalu klik kanan manapun dari daftar yang terdisplay masuk ke `Follow -> TCP Stream` kemudian dibagian yang saya blok itu ada petunjuk bahwa ketika client mengetikkan `"ls"` untuk keluar output `test.txt`
-<img width="1920" height="1080" alt="Screenshot from 2025-09-13 12-22-39" src="https://github.com/user-attachments/assets/840785c5-0fe8-4d84-b85c-bf85bf200447" />
-
-
-
-- Output result
-
-  <img width="794" height="244" alt="image" src="https://github.com/user-attachments/assets/095cfdbc-4c57-46ea-8cb7-6c53126d1155" />
-
-
-  <br>
-  <br>
-
-> c. Apa kata pertama dari frasa yang dimasukkan client ke dalam file sebelumnya?
-
-> _c. What is the first word that the client inserted into the previous file?_
-
-**Answer:** `Jarkom`
-
-- Filter expression
-
-  `telnet`
-
-- Explanation
-
-Gunakan Display Filter yang tercantum di atas untuk melakukan filtering pada packet yang ingin dicari. Lalu klik kanan manapun dari daftar yang terdisplay masuk ke `Follow -> TCP Stream` kemudian dibagian yang saya blok itu ada petunjuk bahwa ketika client mengetikkan `echo "Jarkom gampang" >> test.txt` maka kata pertamanya adalah Jarkom
-<img width="1920" height="1080" alt="Screenshot from 2025-09-13 12-23-07" src="https://github.com/user-attachments/assets/3d91d0e6-42d0-4a81-8d06-cf85a49da028" />
-
-
-- Output result
-
- <img width="794" height="311" alt="image" src="https://github.com/user-attachments/assets/fa69f019-e716-4471-9e3a-fa49665c8a94" />
-
-
-  <br>
-  <br>
-
-## Task 5
-
-- Flag
-
-  `JARKOM25{n4il0ng_m1lk_dr4g000n_M76II0NL935QSS5Z980VTPW8LAHQAAcr0cnktaizrx151gdsdr8lcpb434_2f062b720af882edfd26982fee6c0071}`
-
-> a. Berapa banyak packet berbasis HTTP yang terekam pada file pcapng?
-
-> _a. How many HTTP packets are recorded in the pcapng file?_
-
-**Answer:** `298`
-
-- Filter expression
-
-  `http`
-
-- Explanation
-
-Gunakan Display Filter yang tercantum di atas untuk melakukan filtering pada packet yang ingin dicari. Dengan demikian akan terlihat apa yang ingin kita cari di kanan bawah dengan tulisan `"...Displayed : 298 (0.4%)` maka itulah jawabannya
-<img width="1920" height="1080" alt="Screenshot from 2025-09-13 12-24-16" src="https://github.com/user-attachments/assets/a20055f3-080e-48fa-90bc-ebb24c4cc1c9" />
-
-
-- Output result
-
-<img width="794" height="199" alt="image" src="https://github.com/user-attachments/assets/62fd2066-3d67-40e5-82aa-e0d19e354d75" />
-
-
-  <br>
-  <br>
-
-> b. Ada berapa HTTP packet yang berupa response?
-
-> _b. How many response HTTP packets are recorded in the traffic?_
-
-**Answer:** `149`
-
-- Filter expression
-
-  `http.response`
-
-- Explanation
-
- Gunakan Display Filter yang tercantum di atas untuk melakukan filtering pada packet yang ingin dicari. Dengan demikian akan terlihat apa yang ingin kita cari di kanan bawah dengan tulisan `"...Displayed : 149 (0.2%)` maka itulah jawabannya
- <img width="1920" height="1080" alt="Screenshot from 2025-09-13 12-24-25" src="https://github.com/user-attachments/assets/327a1e0d-d5cb-48ed-bd5f-30999bd785fa" />
-
-
-- Output result
-
-  <img width="794" height="238" alt="image" src="https://github.com/user-attachments/assets/ab59d4b9-a21f-4aba-b500-c321d45f47d6" />
-
-
-  <br>
-  <br>
-
-> c. Ada berapa paket berbasis HTTP yang berhasil?
-
-> _c. How many HTTP packets that succeed?_
-
-**Answer:** `296`
-
-- Filter expression
-
-  `http && !tcp.analysis.lost_segment && !tcp.analyis.retransmission`
-
-- Explanation
-
- Gunakan Display Filter yang tercantum di atas untuk melakukan filtering pada packet yang ingin dicari. Dengan demikian akan terlihat apa yang ingin kita cari di kanan bawah dengan tulisan `"...Displayed : 296 (0.2%)` maka itulah jawabannya
-<img width="1920" height="1080" alt="Screenshot from 2025-09-13 12-25-15" src="https://github.com/user-attachments/assets/29554a07-28b5-4084-9d70-cddbf08861e6" />
-
-- Output result
-
-<img width="794" height="284" alt="image" src="https://github.com/user-attachments/assets/ff3a7bc5-9d11-4b71-be5d-58fcc536728c" />
-
-
-  <br>
-  <br>
-
-> d. Apa alamat IP dari client HTTP yang tersambung lokal dengan mesin lain?
-
-> _d. What is the client HTTP IP Address in connection with other local machine?_
-
-**Answer:** `172.16.16.101`
-
-- Filter expression
-
-  `http.request`
-
-- Explanation
-  Gunakan Display Filter yang tercantum di atas untuk melakukan filtering pada packet yang ingin dicari. Dalam daftar yang terdisplay (yang ter-highlight biru) dapat terlihat bahwa source (client) yakni `172.16.16.101` sedang melakukan request ke `172.16.16.102` yakni mesin lain secara lokal.
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/96f2c370-3a82-4f86-a779-53c0065213d0" />
-
-
-- Output result
-
-  <img width="794" height="349" alt="image" src="https://github.com/user-attachments/assets/09f49df6-9691-44d2-883f-afef93a6b7e3" />
-
-
-  <br>
-  <br>
-
-## Task 6
-
-- Flag
-
-  `JARKOM25{br0mb44rdin0u_Cr0ccc0c0c0cdi1l10l_4733999765awaesa1bytjds9w9sh1n0buLRUKWHBFD1QBJUR_73811cb638223ad10ea507f17c6749ea}`
-
-> a. Apakah kamu menemukan fake flag? Tuliskan seluruhnya!
-
-> _a. Did you find the fake flag? Write it whole!_
-
-**Answer:** `FakeFlag{JarkomGampang}`
-
-- Filter expression
-
-  `-`
-
-- Explanation
-
-  Klik kanan pada baris manapun yang ter-display lalu masuk ke `Follow -> TCP Stream` dan jelajahi seluruhnya dengan mengubah angka `"Stream"` dikanan bawah sampai ketemu dapat dilihat bahwa Fake flag ditemukan di stream ke 31
-  <img width="1920" height="1080" alt="Screenshot from 2025-09-13 12-26-56" src="https://github.com/user-attachments/assets/7e20fac9-7013-482b-8256-104c8a3553e8" />
-
-  
-
-- Output result
-
-  <img width="794" height="203" alt="image" src="https://github.com/user-attachments/assets/e943b673-cf69-4ca1-a74a-00dd6eddc87a" />
-
-
-  <br>
-  <br>
-
-> b. Tuliskan username dan password yang tertulis! (format username:password)
-
-> _b. Write the written username and password! (format username:password)_
-
-**Answer:** `Rey:123`
-
-- Filter expression
-
-  `-`
-
-- Explanation
-
-Klik kanan pada baris manapun yang ter-display lalu masuk ke `Follow -> TCP Stream` dan jelajahi seluruhnya dengan mengubah angka `"Stream"` dikanan bawah sampai ketemu dapat dilihat bahwa username dan password ditemukan di stream ke 32
-  <img width="1920" height="1080" alt="Screenshot from 2025-09-13 12-27-14" src="https://github.com/user-attachments/assets/1be2c5ec-83ca-4427-b718-186e6d5c0d63" />
-
-
-- Output result
-<img width="805" height="272" alt="image" src="https://github.com/user-attachments/assets/852e96d0-6984-4823-a7bc-5180fe51b45d" />
-
-
-  <br>
-  <br>
-
-## Task 7
-
-- Flag
-
-  `JARKOM25{tr4l4lel0_tr1lil1_p63b0k1wpek3b0s0sHWRD7OI3HGVP1C3_f11a7929ddf64e34001f7694057d6338}`
-
-> Apa nama gambar yang direquest oleh client? (tulis dengan ekstensinya)
-
-> _What is the image that is being requested by the client? (write with its extension)_
-
-**Answer:** `donalbebek.jpg`
-
-- Filter expression
-
-  `-`
-
-- Explanation
-
-Klik kanan pada baris manapun yang ter-display lalu masuk ke `Follow -> TCP Stream `dan jelajahi seluruhnya dengan mengubah angka `"Stream"` dikanan bawah sampai ketemu dapat dilihat bahwa client melakukan request dengan `GET /donalbebek.jpg HTTP/1.1` yang ditemukan di stream ke 42
-<img width="1920" height="1080" alt="Screenshot from 2025-09-13 12-43-33" src="https://github.com/user-attachments/assets/456c28dc-b3a9-49c0-8f6a-addb81e69924" />
-
-- Output result
-
- <img width="805" height="230" alt="image" src="https://github.com/user-attachments/assets/563182a1-07e2-42ad-8ba1-a31fc843e52f" />
-
-
-  <br>
-  <br>
-
-## Task 8
-
-- Flag
-
-  `JARKOM25{y0u_4r3_s0_G00d_1n_F0r3nsic_OACKCKCCXYZQ6CTQZVY7DH66Q776OVx45y4n6xp344yrom2vkmww9a9kcaa0_46b6e327b6eddd84b7b71b24e8d93c7f}`
-
-> a. Berapa banyak packet berbasis FTP yang terekam pada file pcapng? (with the data)
-
-> _a. How many FTP packets are recorded in the pcapng file? (with the data)_
-
-**Answer:** `81`
-
-- Filter expression
-
-  `-`
-
-- Explanation
-Gunakan bar atas untuk masuk ke `Statistics -> Protocol Hierarchy` dan lihat jumlah packet dari `FTP Data` yakni 10 dan `File Transfer Protocol (FTP)` yakni 71 jika dijumlah maka 81
-<img width="1920" height="1080" alt="Screenshot from 2025-09-13 12-53-57" src="https://github.com/user-attachments/assets/021beb38-0f0b-430a-bb8d-4d22e22ec138" />
-
-
-- Output result
-
- <img width="805" height="230" alt="image" src="https://github.com/user-attachments/assets/c0f8eb45-c705-4285-9ee9-8600384a6217" />
-
-
-  <br>
-  <br>
-
-> b. Apa username dan password client di koneksi FTP? (tulis dalam format username:password)
-
-> _b. What is the client's username and password in FTP connection? (write in following format username:password)_
-
-**Answer:** `rey:password123lingangu`
-
-- Filter expression
-
-  `ftp`
-
-- Explanation
-
-Gunakan Display Filter yang tercantum di atas untuk melakukan filtering pada packet yang ingin dicari. Lalu klik kanan manapun dari daftar yang terdisplay masuk ke `
+| Aspek | sync | thread | select | poll |
+|---|---|---|---|---|
+| Klien simultan | 1 | Banyak | Banyak | Banyak |
+| Model konkurensi | Tidak ada | Multi-thread | Single-thread event loop | Single-thread event loop |
+| I/O blocking | Ya, semua operasi | Ya, per thread | Tidak | Tidak |
+| Platform | Semua | Semua | Semua | Unix/Linux saja |
+| State per klien | Minimal | Minimal (thread stack) | Lengkap (buffer + state machine) | Lengkap (buffer + state machine) |
+| Overhead per klien | Rendah | Satu thread OS | Rendah (dict entry) | Rendah (dict entry) |
+| Batas file descriptor | Tidak ada | Tidak ada | Bergantung OS (umumnya 1024) | Tidak ada |
+| Kebutuhan locking | Tidak | `threading.Lock` | Tidak | Tidak |
