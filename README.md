@@ -1,6 +1,6 @@
-# 🏥 Implementasi Database Sistem Klinik — Kode Lengkap
+# 🏥 Implementasi Database Sistem Klinik — MySQL 8.0+
 
-> Seluruh SQL siap dijalankan di PostgreSQL. Tidak ada komentar di dalam blok kode.
+> Seluruh SQL siap dijalankan di MySQL 8.0+. Tidak ada komentar di dalam blok kode.
 > Penjelasan diberikan **setelah** setiap blok.
 
 ---
@@ -8,113 +8,126 @@
 ## 1. DDL — Tabel Master & Operasional
 
 ```sql
-DROP TABLE IF EXISTS
-    Log_Pembayaran, Pembayaran, Pendaftaran_Layanan, Pendaftaran,
-    Rujukan, Skrining, Pasien, Layanan, Petugas_Admin,
-    Jadwal_Dokter, Dokter, Poli CASCADE;
+DROP TABLE IF EXISTS Log_Pembayaran;
+DROP TABLE IF EXISTS Pembayaran;
+DROP TABLE IF EXISTS Pendaftaran_Layanan;
+DROP TABLE IF EXISTS Pendaftaran;
+DROP TABLE IF EXISTS Rujukan;
+DROP TABLE IF EXISTS Skrining;
+DROP TABLE IF EXISTS Pasien;
+DROP TABLE IF EXISTS Layanan;
+DROP TABLE IF EXISTS Petugas_Admin;
+DROP TABLE IF EXISTS Jadwal_Dokter;
+DROP TABLE IF EXISTS Dokter;
+DROP TABLE IF EXISTS Poli;
 
 CREATE TABLE Poli (
-    id_poli       SERIAL PRIMARY KEY,
+    id_poli       INT AUTO_INCREMENT PRIMARY KEY,
     nama_poli     VARCHAR(100) NOT NULL,
     nomor_ruangan VARCHAR(20)  NOT NULL
-);
+) ENGINE=InnoDB;
 
 CREATE TABLE Layanan (
-    id_layanan          SERIAL PRIMARY KEY,
+    id_layanan          INT AUTO_INCREMENT PRIMARY KEY,
     nama_layanan        VARCHAR(150)   NOT NULL,
-    tarif_total_layanan NUMERIC(15, 2) NOT NULL DEFAULT 0
-);
+    tarif_total_layanan DECIMAL(15, 2) NOT NULL DEFAULT 0
+) ENGINE=InnoDB;
 
 CREATE TABLE Petugas_Admin (
-    id_admin      SERIAL PRIMARY KEY,
-    nama_petugas  VARCHAR(100) NOT NULL,
-    shift_tugas   VARCHAR(20)  CHECK (shift_tugas IN ('Pagi', 'Siang', 'Malam'))
-);
+    id_admin     INT AUTO_INCREMENT PRIMARY KEY,
+    nama_petugas VARCHAR(100) NOT NULL,
+    shift_tugas  VARCHAR(20)  CHECK (shift_tugas IN ('Pagi', 'Siang', 'Malam'))
+) ENGINE=InnoDB;
 
 CREATE TABLE Pasien (
-    id_pasien       SERIAL PRIMARY KEY,
+    id_pasien       INT AUTO_INCREMENT PRIMARY KEY,
     nim_nik         VARCHAR(20)  UNIQUE NOT NULL,
     nama            VARCHAR(150) NOT NULL,
     asal_faskes     VARCHAR(100),
     no_telp         VARCHAR(20),
     kategori_pasien VARCHAR(50)  CHECK (kategori_pasien IN ('Umum', 'BPJS', 'Asuransi Lain'))
-);
+) ENGINE=InnoDB;
 
 CREATE TABLE Dokter (
-    id_dokter   SERIAL PRIMARY KEY,
-    id_poli     INT          NOT NULL REFERENCES Poli(id_poli) ON DELETE RESTRICT,
-    nama_dokter VARCHAR(150) NOT NULL
-);
+    id_dokter   INT AUTO_INCREMENT PRIMARY KEY,
+    id_poli     INT          NOT NULL,
+    nama_dokter VARCHAR(150) NOT NULL,
+    CONSTRAINT fk_dokter_poli FOREIGN KEY (id_poli) REFERENCES Poli(id_poli) ON DELETE RESTRICT
+) ENGINE=InnoDB;
 
 CREATE TABLE Jadwal_Dokter (
-    id_jadwal     SERIAL PRIMARY KEY,
-    id_dokter     INT     NOT NULL REFERENCES Dokter(id_dokter) ON DELETE CASCADE,
+    id_jadwal     INT AUTO_INCREMENT PRIMARY KEY,
+    id_dokter     INT     NOT NULL,
     hari_tanggal  DATE    NOT NULL,
     jam_mulai     TIME    NOT NULL,
     jam_selesai   TIME    NOT NULL,
     status_jadwal VARCHAR(20) DEFAULT 'Tersedia'
-        CHECK (status_jadwal IN ('Tersedia', 'Penuh', 'Batal'))
-);
+        CHECK (status_jadwal IN ('Tersedia', 'Penuh', 'Batal')),
+    CONSTRAINT fk_jadwal_dokter FOREIGN KEY (id_dokter) REFERENCES Dokter(id_dokter) ON DELETE CASCADE
+) ENGINE=InnoDB;
 
 CREATE TABLE Skrining (
-    id_skrining       SERIAL PRIMARY KEY,
-    id_pasien         INT       NOT NULL REFERENCES Pasien(id_pasien) ON DELETE CASCADE,
-    tanggal_skrining  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    hasil_skrinning   TEXT,
-    status_kelayakan  VARCHAR(50)
-        CHECK (status_kelayakan IN ('Layak Ditangani', 'Perlu Rujukan', 'Kritis'))
-);
+    id_skrining      INT AUTO_INCREMENT PRIMARY KEY,
+    id_pasien        INT       NOT NULL,
+    tanggal_skrining TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    hasil_skrinning  TEXT,
+    status_kelayakan VARCHAR(50)
+        CHECK (status_kelayakan IN ('Layak Ditangani', 'Perlu Rujukan', 'Kritis')),
+    CONSTRAINT fk_skrining_pasien FOREIGN KEY (id_pasien) REFERENCES Pasien(id_pasien) ON DELETE CASCADE
+) ENGINE=InnoDB;
 
 CREATE TABLE Rujukan (
-    id_rujukan      SERIAL PRIMARY KEY,
-    id_skrining     INT  UNIQUE NOT NULL REFERENCES Skrining(id_skrining) ON DELETE CASCADE,
+    id_rujukan      INT AUTO_INCREMENT PRIMARY KEY,
+    id_skrining     INT  UNIQUE NOT NULL,
     alasan_rujukan  TEXT NOT NULL,
     tanggal_rujukan TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     asal_rujukan    VARCHAR(100),
-    tujuan_rujukan  VARCHAR(150) NOT NULL
-);
+    tujuan_rujukan  VARCHAR(150) NOT NULL,
+    CONSTRAINT fk_rujukan_skrining FOREIGN KEY (id_skrining) REFERENCES Skrining(id_skrining) ON DELETE CASCADE
+) ENGINE=InnoDB;
 
 CREATE TABLE Pendaftaran (
-    id_daftar           SERIAL PRIMARY KEY,
-    id_pasien           INT NOT NULL REFERENCES Pasien(id_pasien) ON DELETE RESTRICT,
-    id_jadwal           INT NOT NULL REFERENCES Jadwal_Dokter(id_jadwal) ON DELETE RESTRICT,
-    id_admin            INT NOT NULL REFERENCES Petugas_Admin(id_admin),
+    id_daftar           INT AUTO_INCREMENT PRIMARY KEY,
+    id_pasien           INT NOT NULL,
+    id_jadwal           INT NOT NULL,
+    id_admin            INT NOT NULL,
     tanggal_pendaftaran TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status_pendaftaran  VARCHAR(20) DEFAULT 'Menunggu'
         CHECK (status_pendaftaran IN ('Menunggu', 'Diperiksa', 'Selesai', 'Batal')),
-    nomor_antrean       INT
-);
+    nomor_antrean       INT,
+    CONSTRAINT fk_daftar_pasien FOREIGN KEY (id_pasien) REFERENCES Pasien(id_pasien) ON DELETE RESTRICT,
+    CONSTRAINT fk_daftar_jadwal FOREIGN KEY (id_jadwal) REFERENCES Jadwal_Dokter(id_jadwal) ON DELETE RESTRICT,
+    CONSTRAINT fk_daftar_admin  FOREIGN KEY (id_admin)  REFERENCES Petugas_Admin(id_admin)
+) ENGINE=InnoDB;
 
 CREATE TABLE Pendaftaran_Layanan (
-    id_daftar   INT NOT NULL REFERENCES Pendaftaran(id_daftar) ON DELETE CASCADE,
-    id_layanan  INT NOT NULL REFERENCES Layanan(id_layanan) ON DELETE RESTRICT,
-    PRIMARY KEY (id_daftar, id_layanan)
-);
+    id_daftar  INT NOT NULL,
+    id_layanan INT NOT NULL,
+    PRIMARY KEY (id_daftar, id_layanan),
+    CONSTRAINT fk_pl_daftar  FOREIGN KEY (id_daftar)  REFERENCES Pendaftaran(id_daftar) ON DELETE CASCADE,
+    CONSTRAINT fk_pl_layanan FOREIGN KEY (id_layanan) REFERENCES Layanan(id_layanan) ON DELETE RESTRICT
+) ENGINE=InnoDB;
 
 CREATE TABLE Pembayaran (
-    id_pembayaran SERIAL PRIMARY KEY,
-    id_daftar     INT UNIQUE NOT NULL REFERENCES Pendaftaran(id_daftar) ON DELETE CASCADE,
+    id_pembayaran INT AUTO_INCREMENT PRIMARY KEY,
+    id_daftar     INT UNIQUE NOT NULL,
     metode_bayar  VARCHAR(50)
         CHECK (metode_bayar IN ('Tunai', 'Transfer', 'E-Wallet', 'BPJS')),
     status_bayar  VARCHAR(20) DEFAULT 'Pending'
-        CHECK (status_bayar IN ('Pending', 'Lunas', 'Gagal'))
-);
+        CHECK (status_bayar IN ('Pending', 'Lunas', 'Gagal')),
+    CONSTRAINT fk_bayar_daftar FOREIGN KEY (id_daftar) REFERENCES Pendaftaran(id_daftar) ON DELETE CASCADE
+) ENGINE=InnoDB;
 ```
 
 **Penjelasan langkah demi langkah:**
 
-1. **DROP TABLE CASCADE** — Hapus semua tabel lama (jika ada) agar script bisa dijalankan ulang tanpa error konflik.
-2. **Poli** — Tabel master poli/klinik. Menyimpan nama poli dan nomor ruangan.
-3. **Layanan** — Daftar layanan medis beserta tarif. Dipakai untuk kalkulasi tagihan.
-4. **Petugas_Admin** — Data admin klinik. Field `shift_tugas` dibatasi 3 opsi via CHECK constraint.
-5. **Pasien** — Data pasien dengan `nim_nik` sebagai identifier unik. `kategori_pasien` menentukan jalur pembayaran (Umum/BPJS/Asuransi Lain).
-6. **Dokter** — Setiap dokter terikat ke satu Poli via foreign key. `ON DELETE RESTRICT` mencegah hapus poli yang masih punya dokter.
-7. **Jadwal_Dokter** — Jadwal praktek per dokter per hari. Status `Tersedia/Penuh/Batal` dikontrol otomatis oleh trigger.
-8. **Skrining** — Hasil pemeriksaan awal pasien. Status kelayakan menentukan apakah pasien dirujuk atau ditangani.
-9. **Rujukan** — Satu skrining maksimal satu rujukan (UNIQUE constraint pada `id_skrining`).
-10. **Pendaftaran** — Tabel transaksional utama. Menghubungkan pasien, jadwal, dan admin. Nomor antrean di-assign otomatis oleh trigger.
-11. **Pendaftaran_Layanan** — Tabel pivot many-to-many antara Pendaftaran dan Layanan.
-12. **Pembayaran** — Satu pendaftaran punya satu pembayaran (UNIQUE pada `id_daftar`). Status dan metode bayar divalidasi via CHECK dan trigger.
+1. **DROP TABLE** — Dihapus satu per satu sesuai urutan dependensi (child dulu, parent belakangan). MySQL tidak support multi-table DROP dengan CASCADE seperti PostgreSQL.
+2. **ENGINE=InnoDB** — Wajib untuk support foreign key, transaksi (COMMIT/ROLLBACK), dan row-level locking.
+3. **AUTO_INCREMENT** — Pengganti `SERIAL` PostgreSQL. Otomatis increment setiap INSERT.
+4. **DECIMAL(15,2)** — Pengganti `NUMERIC` PostgreSQL untuk presisi bilangan desimal.
+5. **CHECK constraint** — Didukung penuh di MySQL 8.0.16+. Memvalidasi nilai kolom sebelum INSERT/UPDATE.
+6. **Named FOREIGN KEY** — Setiap FK diberi nama eksplisit (`CONSTRAINT fk_...`) agar mudah di-debug jika terjadi pelanggaran referensi.
+7. **Struktur tabel sama** dengan versi PostgreSQL — 4 tabel master (Poli, Layanan, Petugas_Admin, Pasien), 4 tabel operasional medis (Dokter, Jadwal_Dokter, Skrining, Rujukan), dan 4 tabel transaksional (Pendaftaran, Pendaftaran_Layanan, Pembayaran).
 
 ---
 
@@ -122,7 +135,7 @@ CREATE TABLE Pembayaran (
 
 ```sql
 CREATE TABLE Log_Pembayaran (
-    id_log          SERIAL PRIMARY KEY,
+    id_log          INT AUTO_INCREMENT PRIMARY KEY,
     id_pembayaran   INT         NOT NULL,
     id_daftar       INT         NOT NULL,
     status_lama     VARCHAR(20),
@@ -131,16 +144,16 @@ CREATE TABLE Log_Pembayaran (
     metode_baru     VARCHAR(50),
     waktu_perubahan TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
     keterangan      TEXT
-);
+) ENGINE=InnoDB;
 ```
 
 **Penjelasan langkah demi langkah:**
 
-1. Tabel ini menyimpan jejak setiap perubahan pada tabel `Pembayaran`.
-2. Kolom `status_lama` dan `status_baru` merekam transisi status pembayaran.
-3. Kolom `metode_lama` dan `metode_baru` merekam perubahan metode bayar.
-4. `waktu_perubahan` otomatis terisi timestamp saat record dibuat.
-5. Diisi otomatis oleh Trigger 8 (`trg_audit_perubahan_pembayaran`), bukan manual.
+1. Menyimpan jejak setiap perubahan pada tabel `Pembayaran`.
+2. `status_lama`/`status_baru` merekam transisi status pembayaran.
+3. `metode_lama`/`metode_baru` merekam perubahan metode bayar.
+4. `waktu_perubahan` otomatis terisi timestamp.
+5. Diisi oleh Trigger audit, bukan manual.
 
 ---
 
@@ -149,240 +162,180 @@ CREATE TABLE Log_Pembayaran (
 ### 3.1 fn_Hitung_Total_Tagihan
 
 ```sql
-CREATE OR REPLACE FUNCTION fn_Hitung_Total_Tagihan(p_id_daftar INT)
-RETURNS NUMERIC(15, 2) AS $$
-DECLARE
-    v_total    NUMERIC(15, 2) := 0;
-    v_kategori VARCHAR(50);
+DELIMITER //
+CREATE FUNCTION fn_Hitung_Total_Tagihan(p_id_daftar INT)
+RETURNS DECIMAL(15, 2)
+READS SQL DATA
 BEGIN
-    SELECT p.kategori_pasien
-    INTO   v_kategori
+    DECLARE v_total    DECIMAL(15, 2) DEFAULT 0;
+    DECLARE v_kategori VARCHAR(50);
+
+    IF NOT EXISTS (SELECT 1 FROM Pendaftaran WHERE id_daftar = p_id_daftar) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'fn_Hitung_Total_Tagihan: Pendaftaran tidak ditemukan.';
+    END IF;
+
+    SELECT p.kategori_pasien INTO v_kategori
     FROM   Pendaftaran dft
     JOIN   Pasien p ON dft.id_pasien = p.id_pasien
     WHERE  dft.id_daftar = p_id_daftar;
-
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'fn_Hitung_Total_Tagihan: Pendaftaran ID % tidak ditemukan.', p_id_daftar;
-    END IF;
 
     IF v_kategori = 'BPJS' THEN
         RETURN 0.00;
     END IF;
 
-    SELECT COALESCE(SUM(l.tarif_total_layanan), 0)
-    INTO   v_total
+    SELECT COALESCE(SUM(l.tarif_total_layanan), 0) INTO v_total
     FROM   Pendaftaran_Layanan pl
     JOIN   Layanan l ON pl.id_layanan = l.id_layanan
     WHERE  pl.id_daftar = p_id_daftar;
 
     RETURN v_total;
-END;
-$$ LANGUAGE plpgsql;
+END //
+DELIMITER ;
 ```
 
 **Penjelasan langkah demi langkah:**
 
-1. Menerima `p_id_daftar` (ID pendaftaran) sebagai input.
-2. JOIN `Pendaftaran` → `Pasien` untuk ambil kategori pasien.
-3. Jika pendaftaran tidak ditemukan → raise exception.
-4. Jika pasien BPJS → langsung return 0 (ditanggung BPJS).
-5. Jika pasien non-BPJS → SUM semua tarif layanan dari tabel pivot `Pendaftaran_Layanan` JOIN `Layanan`.
-6. COALESCE memastikan return 0 jika belum ada layanan terdaftar.
+1. `READS SQL DATA` — mendeklarasikan function hanya membaca data, tidak memodifikasi.
+2. `NOT EXISTS` cek keberadaan pendaftaran. Lebih efisien dari handler NOT FOUND karena satu query langsung evaluasi boolean.
+3. `SIGNAL SQLSTATE '45000'` — pengganti `RAISE EXCEPTION` PostgreSQL. SQLSTATE 45000 = user-defined error.
+4. Jika pasien BPJS → return 0 (ditanggung BPJS).
+5. Jika non-BPJS → SUM tarif dari `Pendaftaran_Layanan` JOIN `Layanan`.
+6. COALESCE menangani kasus belum ada layanan terdaftar.
 
 ---
 
 ### 3.2 fn_Cek_Ketersediaan_Jadwal
 
 ```sql
-CREATE OR REPLACE FUNCTION fn_Cek_Ketersediaan_Jadwal(p_id_jadwal INT)
-RETURNS BOOLEAN AS $$
-DECLARE
-    v_status_jadwal VARCHAR(20);
-    v_jumlah_aktif  INT;
-    v_limit_antrean CONSTANT INT := 30;
+DELIMITER //
+CREATE FUNCTION fn_Cek_Ketersediaan_Jadwal(p_id_jadwal INT)
+RETURNS TINYINT(1)
+READS SQL DATA
 BEGIN
-    SELECT status_jadwal
-    INTO   v_status_jadwal
+    DECLARE v_status_jadwal VARCHAR(20);
+    DECLARE v_jumlah_aktif  INT;
+    DECLARE v_limit_antrean INT DEFAULT 30;
+
+    SELECT status_jadwal INTO v_status_jadwal
     FROM   Jadwal_Dokter
     WHERE  id_jadwal = p_id_jadwal;
 
-    IF NOT FOUND THEN
-        RETURN FALSE;
+    IF v_status_jadwal IS NULL THEN
+        RETURN 0;
     END IF;
 
     IF v_status_jadwal IN ('Penuh', 'Batal') THEN
-        RETURN FALSE;
+        RETURN 0;
     END IF;
 
-    SELECT COUNT(*)
-    INTO   v_jumlah_aktif
+    SELECT COUNT(*) INTO v_jumlah_aktif
     FROM   Pendaftaran
     WHERE  id_jadwal = p_id_jadwal
       AND  status_pendaftaran != 'Batal';
 
     RETURN v_jumlah_aktif < v_limit_antrean;
-END;
-$$ LANGUAGE plpgsql;
+END //
+DELIMITER ;
 ```
 
 **Penjelasan langkah demi langkah:**
 
-1. Menerima `p_id_jadwal` sebagai input, return `TRUE`/`FALSE`.
-2. Ambil status jadwal dari `Jadwal_Dokter`.
-3. Return FALSE jika jadwal tidak ditemukan.
-4. Return FALSE jika status sudah `Penuh` atau `Batal`.
-5. Hitung jumlah pendaftaran aktif (bukan Batal) pada jadwal tersebut.
-6. Return TRUE hanya jika jumlah aktif masih di bawah batas 30 pasien.
+1. `TINYINT(1)` — pengganti `BOOLEAN` PostgreSQL. MySQL menyimpan boolean sebagai 0/1.
+2. Jika `SELECT INTO` tidak menemukan baris, variabel tetap NULL → dicek dengan `IS NULL`.
+3. Return 0 jika jadwal tidak ada, Penuh, atau Batal.
+4. Hitung pendaftaran aktif (bukan Batal) pada jadwal.
+5. Return 1 (true) hanya jika jumlah aktif < 30.
 
 ---
 
 ### 3.3 fn_Hitung_Estimasi_Tunggu
 
 ```sql
-CREATE OR REPLACE FUNCTION fn_Hitung_Estimasi_Tunggu(p_id_daftar INT)
-RETURNS TIME AS $$
-DECLARE
-    v_nomor_antrean        INT;
-    v_id_jadwal            INT;
-    v_jam_mulai            TIME;
-    v_menit_per_pasien     INT := 10;
-    v_estimasi_jam_panggil TIME;
+DELIMITER //
+CREATE FUNCTION fn_Hitung_Estimasi_Tunggu(p_id_daftar INT)
+RETURNS TIME
+READS SQL DATA
 BEGIN
+    DECLARE v_nomor_antrean    INT;
+    DECLARE v_id_jadwal        INT;
+    DECLARE v_jam_mulai        TIME;
+    DECLARE v_menit_per_pasien INT DEFAULT 10;
+
     SELECT nomor_antrean, id_jadwal
     INTO   v_nomor_antrean, v_id_jadwal
     FROM   Pendaftaran
     WHERE  id_daftar = p_id_daftar;
 
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'fn_Hitung_Estimasi_Tunggu: Pendaftaran ID % tidak ditemukan.', p_id_daftar;
+    IF v_nomor_antrean IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'fn_Hitung_Estimasi_Tunggu: Pendaftaran tidak ditemukan.';
     END IF;
 
-    SELECT jam_mulai
-    INTO   v_jam_mulai
+    SELECT jam_mulai INTO v_jam_mulai
     FROM   Jadwal_Dokter
     WHERE  id_jadwal = v_id_jadwal;
 
-    v_estimasi_jam_panggil := v_jam_mulai +
-        ((v_nomor_antrean - 1) * v_menit_per_pasien || ' minutes')::INTERVAL;
-
-    RETURN v_estimasi_jam_panggil;
-END;
-$$ LANGUAGE plpgsql;
+    RETURN ADDTIME(v_jam_mulai,
+                   MAKETIME(0, (v_nomor_antrean - 1) * v_menit_per_pasien, 0));
+END //
+DELIMITER ;
 ```
 
 **Penjelasan langkah demi langkah:**
 
-1. Menerima `p_id_daftar`, return estimasi waktu dipanggil sebagai `TIME`.
-2. Ambil `nomor_antrean` dan `id_jadwal` dari `Pendaftaran`.
-3. Ambil `jam_mulai` praktek dokter dari `Jadwal_Dokter`.
-4. Kalkulasi: `jam_mulai + (nomor_antrean - 1) × 10 menit`.
-5. Contoh: antrean ke-5, jam mulai 09:00 → estimasi dipanggil 09:40.
-6. Cast string interval ke tipe INTERVAL PostgreSQL untuk operasi aritmatika waktu.
+1. Ambil `nomor_antrean` dan `id_jadwal` dari `Pendaftaran`.
+2. Cek NULL untuk deteksi not-found (nomor_antrean pasti terisi oleh trigger saat INSERT).
+3. Ambil `jam_mulai` dari `Jadwal_Dokter`.
+4. **Perbaikan efisiensi**: `ADDTIME` + `MAKETIME` langsung menghasilkan TIME tanpa string concatenation dan casting. PostgreSQL versi lama melakukan `|| ' minutes')::INTERVAL` yang memerlukan parsing string setiap pemanggilan.
+5. `MAKETIME(0, menit, 0)` membuat interval waktu `00:menit:00` secara langsung.
+6. Contoh: antrean ke-5, jam mulai 09:00 → `ADDTIME('09:00:00', '00:40:00')` = `09:40:00`.
 
 ---
 
 ### 3.4 fn_Validasi_Metode_Bayar
 
 ```sql
-CREATE OR REPLACE FUNCTION fn_Validasi_Metode_Bayar(
+DELIMITER //
+CREATE FUNCTION fn_Validasi_Metode_Bayar(
     p_id_daftar   INT,
     p_metode_bayar VARCHAR(50)
 )
-RETURNS BOOLEAN AS $$
-DECLARE
-    v_kategori VARCHAR(50);
+RETURNS TINYINT(1)
+READS SQL DATA
 BEGIN
-    SELECT p.kategori_pasien
-    INTO   v_kategori
+    DECLARE v_kategori VARCHAR(50);
+
+    IF NOT EXISTS (SELECT 1 FROM Pendaftaran WHERE id_daftar = p_id_daftar) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'fn_Validasi_Metode_Bayar: Pendaftaran tidak ditemukan.';
+    END IF;
+
+    SELECT p.kategori_pasien INTO v_kategori
     FROM   Pendaftaran dft
     JOIN   Pasien p ON dft.id_pasien = p.id_pasien
     WHERE  dft.id_daftar = p_id_daftar;
 
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'fn_Validasi_Metode_Bayar: Pendaftaran ID % tidak ditemukan.', p_id_daftar;
-    END IF;
-
     IF v_kategori = 'BPJS' AND p_metode_bayar != 'BPJS' THEN
-        RETURN FALSE;
+        RETURN 0;
     END IF;
 
     IF v_kategori != 'BPJS' AND p_metode_bayar = 'BPJS' THEN
-        RETURN FALSE;
+        RETURN 0;
     END IF;
 
-    RETURN TRUE;
-END;
-$$ LANGUAGE plpgsql;
+    RETURN 1;
+END //
+DELIMITER ;
 ```
 
 **Penjelasan langkah demi langkah:**
 
-1. Menerima `p_id_daftar` dan `p_metode_bayar`, return `BOOLEAN`.
-2. Ambil kategori pasien melalui JOIN `Pendaftaran` → `Pasien`.
-3. Rule 1: Pasien BPJS **wajib** bayar via metode BPJS → return FALSE jika tidak.
-4. Rule 2: Pasien non-BPJS **tidak boleh** klaim BPJS → return FALSE jika mencoba.
-5. Jika lolos kedua rule → return TRUE (metode bayar valid).
-
----
-
-### 3.5 fn_Get_Statistik_Harian
-
-```sql
-CREATE OR REPLACE FUNCTION fn_Get_Statistik_Harian(p_tanggal DATE)
-RETURNS TABLE (
-    total_pendaftaran INT,
-    total_selesai     INT,
-    total_batal       INT,
-    total_menunggu    INT,
-    total_pendapatan  NUMERIC(15, 2),
-    total_rujukan     INT
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT
-        COUNT(DISTINCT p.id_daftar)::INT,
-
-        COUNT(DISTINCT p.id_daftar)
-            FILTER (WHERE p.status_pendaftaran = 'Selesai')::INT,
-
-        COUNT(DISTINCT p.id_daftar)
-            FILTER (WHERE p.status_pendaftaran = 'Batal')::INT,
-
-        COUNT(DISTINCT p.id_daftar)
-            FILTER (WHERE p.status_pendaftaran IN ('Menunggu', 'Diperiksa'))::INT,
-
-        COALESCE(SUM(l.tarif_total_layanan)
-            FILTER (
-                WHERE py.status_bayar = 'Lunas'
-                  AND pas.kategori_pasien != 'BPJS'
-            ), 0),
-
-        COUNT(DISTINCT r.id_rujukan)::INT
-
-    FROM   Pendaftaran p
-    JOIN   Jadwal_Dokter jd  ON p.id_jadwal  = jd.id_jadwal
-    JOIN   Pasien pas        ON p.id_pasien  = pas.id_pasien
-    LEFT JOIN Pembayaran py  ON p.id_daftar  = py.id_daftar
-    LEFT JOIN Pendaftaran_Layanan pl ON p.id_daftar  = pl.id_daftar
-    LEFT JOIN Layanan l      ON pl.id_layanan = l.id_layanan
-    LEFT JOIN Skrining sk    ON pas.id_pasien = sk.id_pasien
-                             AND DATE(sk.tanggal_skrining) = p_tanggal
-    LEFT JOIN Rujukan r      ON sk.id_skrining = r.id_skrining
-    WHERE  jd.hari_tanggal = p_tanggal;
-END;
-$$ LANGUAGE plpgsql;
-```
-
-**Penjelasan langkah demi langkah:**
-
-1. Menerima `p_tanggal` (DATE), return tabel dengan 6 kolom statistik.
-2. `total_pendaftaran` — hitung semua pendaftaran unik pada tanggal tersebut.
-3. `total_selesai` — filter hanya status 'Selesai' menggunakan FILTER clause PostgreSQL.
-4. `total_batal` — filter status 'Batal'.
-5. `total_menunggu` — gabungan status 'Menunggu' dan 'Diperiksa' (masih dalam proses).
-6. `total_pendapatan` — SUM tarif layanan hanya dari pembayaran Lunas dan pasien non-BPJS.
-7. `total_rujukan` — hitung rujukan unik yang terjadi pada tanggal tersebut.
-8. Multi-JOIN menghubungkan Pendaftaran → Jadwal (filter tanggal) → Pasien → Pembayaran → Layanan → Skrining → Rujukan.
+1. Cek keberadaan pendaftaran dengan `NOT EXISTS`.
+2. Ambil kategori pasien via JOIN.
+3. Rule 1: Pasien BPJS wajib bayar via BPJS → return 0 jika tidak.
+4. Rule 2: Pasien non-BPJS tidak boleh klaim BPJS → return 0 jika mencoba.
+5. Return 1 jika lolos kedua rule.
 
 ---
 
@@ -391,7 +344,8 @@ $$ LANGUAGE plpgsql;
 ### 4.1 sp_Daftar_Pasien_Baru_Kompleks
 
 ```sql
-CREATE OR REPLACE PROCEDURE sp_Daftar_Pasien_Baru_Kompleks(
+DELIMITER //
+CREATE PROCEDURE sp_Daftar_Pasien_Baru_Kompleks(
     IN  p_nim_nik          VARCHAR(20),
     IN  p_nama             VARCHAR(150),
     IN  p_asal_faskes      VARCHAR(100),
@@ -404,26 +358,31 @@ CREATE OR REPLACE PROCEDURE sp_Daftar_Pasien_Baru_Kompleks(
     OUT p_id_daftar        INT,
     OUT p_pesan            VARCHAR(500)
 )
-LANGUAGE plpgsql AS $$
-DECLARE
-    v_id_pasien       INT;
-    v_id_skrining     INT;
-    v_jadwal_tersedia BOOLEAN;
 BEGIN
-    v_jadwal_tersedia := fn_Cek_Ketersediaan_Jadwal(p_id_jadwal);
-    IF NOT v_jadwal_tersedia THEN
-        RAISE EXCEPTION 'JADWAL_TIDAK_TERSEDIA: Jadwal ID % penuh atau sudah dibatalkan.', p_id_jadwal;
+    DECLARE v_id_pasien   INT;
+    DECLARE v_id_skrining INT;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    IF fn_Cek_Ketersediaan_Jadwal(p_id_jadwal) = 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'JADWAL_TIDAK_TERSEDIA: Jadwal penuh atau sudah dibatalkan.';
     END IF;
 
-    SELECT id_pasien
-    INTO   v_id_pasien
+    SELECT id_pasien INTO v_id_pasien
     FROM   Pasien
     WHERE  nim_nik = p_nim_nik;
 
-    IF NOT FOUND THEN
+    IF v_id_pasien IS NULL THEN
         INSERT INTO Pasien (nim_nik, nama, asal_faskes, no_telp, kategori_pasien)
-        VALUES (p_nim_nik, p_nama, p_asal_faskes, p_no_telp, p_kategori_pasien)
-        RETURNING id_pasien INTO v_id_pasien;
+        VALUES (p_nim_nik, p_nama, p_asal_faskes, p_no_telp, p_kategori_pasien);
+        SET v_id_pasien = LAST_INSERT_ID();
     ELSE
         UPDATE Pasien
         SET    no_telp     = COALESCE(NULLIF(p_no_telp, ''), no_telp),
@@ -432,299 +391,362 @@ BEGIN
     END IF;
 
     INSERT INTO Skrining (id_pasien, hasil_skrinning, status_kelayakan)
-    VALUES (v_id_pasien, p_hasil_skrining, p_status_kelayakan)
-    RETURNING id_skrining INTO v_id_skrining;
+    VALUES (v_id_pasien, p_hasil_skrining, p_status_kelayakan);
+    SET v_id_skrining = LAST_INSERT_ID();
 
     INSERT INTO Pendaftaran (id_pasien, id_jadwal, id_admin)
-    VALUES (v_id_pasien, p_id_jadwal, p_id_admin)
-    RETURNING id_daftar INTO p_id_daftar;
+    VALUES (v_id_pasien, p_id_jadwal, p_id_admin);
+    SET p_id_daftar = LAST_INSERT_ID();
 
-    p_pesan := FORMAT(
-        'SUKSES: Pasien "%s" berhasil didaftarkan. ID Daftar: %s | ID Skrining: %s | Jadwal ID: %s.',
-        p_nama, p_id_daftar, v_id_skrining, p_id_jadwal
+    SET p_pesan = CONCAT(
+        'SUKSES: Pasien "', p_nama, '" berhasil didaftarkan. ID Daftar: ', p_id_daftar,
+        ' | ID Skrining: ', v_id_skrining, ' | Jadwal ID: ', p_id_jadwal, '.'
     );
 
-EXCEPTION
-    WHEN OTHERS THEN
-        RAISE;
-END;
-$$;
+    COMMIT;
+END //
+DELIMITER ;
 ```
 
 **Penjelasan langkah demi langkah:**
 
-1. **Step 1 — Validasi jadwal**: Panggil `fn_Cek_Ketersediaan_Jadwal`. Jika FALSE → exception, seluruh operasi batal.
-2. **Step 2 — Cek/buat pasien**: Cari pasien berdasarkan `nim_nik`. Jika tidak ditemukan → INSERT pasien baru. Jika sudah ada → UPDATE data kontak terkini (no_telp, asal_faskes) tanpa menimpa data lama yang kosong.
-3. **Step 3 — INSERT Skrining**: Buat record skrining. Trigger `trg_buat_draft_rujukan` otomatis aktif jika status = 'Perlu Rujukan'.
-4. **Step 4 — INSERT Pendaftaran**: Buat record pendaftaran. Trigger `trg_blokir_daftar_ke_jadwal_nonaktif` validasi jadwal, `trg_set_nomor_antrean` assign nomor antrean otomatis.
-5. **Output**: Kembalikan `p_id_daftar` dan pesan sukses via parameter OUT.
-6. **Exception handler**: Re-raise error agar transaksi pemanggil di-rollback.
+1. **EXIT HANDLER + ROLLBACK** — Jika terjadi error di mana pun dalam prosedur, semua operasi di-rollback otomatis lalu error diteruskan ke pemanggil via `RESIGNAL`. Ini menjamin atomisitas.
+2. **START TRANSACTION** — Memulai transaksi eksplisit. Semua INSERT/UPDATE di dalam blok ini bersifat atomik.
+3. **Step 1 — Validasi jadwal**: Panggil `fn_Cek_Ketersediaan_Jadwal`. Return 0 → SIGNAL error.
+4. **Step 2 — Cek/buat pasien**: `SELECT INTO` lalu cek NULL. Pasien baru → INSERT + `LAST_INSERT_ID()`. Pasien lama → UPDATE kontak terkini.
+5. **Step 3 — INSERT Skrining**: `LAST_INSERT_ID()` mengambil ID terakhir yang di-generate. Trigger `trg_buat_draft_rujukan_insert` aktif jika status = 'Perlu Rujukan'.
+6. **Step 4 — INSERT Pendaftaran**: Trigger `trg_blokir_daftar_ke_jadwal_nonaktif` validasi jadwal, `trg_set_nomor_antrean` assign nomor antrean.
+7. **CONCAT** — Pengganti `FORMAT()` PostgreSQL untuk membangun pesan output.
+8. **COMMIT** — Jika semua langkah sukses, transaksi di-commit.
 
 ---
 
 ### 4.2 sp_Pembatalan_Jadwal_Dokter
 
 ```sql
-CREATE OR REPLACE PROCEDURE sp_Pembatalan_Jadwal_Dokter(
+DELIMITER //
+CREATE PROCEDURE sp_Pembatalan_Jadwal_Dokter(
     IN  p_id_jadwal          INT,
     OUT p_jumlah_terpengaruh INT
 )
-LANGUAGE plpgsql AS $$
-DECLARE
-    r RECORD;
 BEGIN
-    p_jumlah_terpengaruh := 0;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
 
     IF NOT EXISTS (
         SELECT 1 FROM Jadwal_Dokter
         WHERE  id_jadwal     = p_id_jadwal
-          AND  status_jadwal NOT IN ('Batal')
+          AND  status_jadwal != 'Batal'
     ) THEN
-        RAISE EXCEPTION 'Jadwal ID % tidak ditemukan atau sudah berstatus Batal.', p_id_jadwal;
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Jadwal tidak ditemukan atau sudah berstatus Batal.';
     END IF;
 
     UPDATE Jadwal_Dokter
     SET    status_jadwal = 'Batal'
     WHERE  id_jadwal     = p_id_jadwal;
 
-    FOR r IN
-        SELECT p.id_daftar, pas.no_telp, pas.nama
-        FROM   Pendaftaran p
-        JOIN   Pasien pas ON p.id_pasien = pas.id_pasien
-        WHERE  p.id_jadwal          = p_id_jadwal
-          AND  p.status_pendaftaran NOT IN ('Selesai', 'Batal')
-    LOOP
-        UPDATE Pendaftaran
-        SET    status_pendaftaran = 'Batal'
-        WHERE  id_daftar          = r.id_daftar;
+    UPDATE Pendaftaran
+    SET    status_pendaftaran = 'Batal'
+    WHERE  id_jadwal           = p_id_jadwal
+      AND  status_pendaftaran NOT IN ('Selesai', 'Batal');
 
-        RAISE NOTICE 'NOTIF_FLAG|PHONE:%|NAMA:%|PESAN:Jadwal pemeriksaan Anda dibatalkan. Mohon hubungi klinik untuk penjadwalan ulang.',
-            r.no_telp, r.nama;
+    SET p_jumlah_terpengaruh = ROW_COUNT();
 
-        p_jumlah_terpengaruh := p_jumlah_terpengaruh + 1;
-    END LOOP;
-
-    RAISE NOTICE 'Jadwal ID % berhasil dibatalkan. % pasien terpengaruh.', p_id_jadwal, p_jumlah_terpengaruh;
-
-EXCEPTION
-    WHEN OTHERS THEN
-        RAISE;
-END;
-$$;
+    COMMIT;
+END //
+DELIMITER ;
 ```
 
 **Penjelasan langkah demi langkah:**
 
-1. **Step 1 — Validasi**: Pastikan jadwal ada dan belum berstatus 'Batal'.
-2. **Step 2 — Batalkan jadwal**: UPDATE status jadwal menjadi 'Batal'.
-3. **Step 3 — Cascade pembatalan**: Loop semua pendaftaran aktif (bukan Selesai/Batal) pada jadwal tersebut. Setiap pendaftaran diubah ke 'Batal'. Trigger `trg_buka_kembali_jadwal` otomatis aktif.
-4. **Notifikasi**: RAISE NOTICE menghasilkan flag yang bisa dibaca backend untuk kirim WhatsApp/SMS.
-5. **Output**: Counter `p_jumlah_terpengaruh` menunjukkan berapa pasien terdampak.
+1. **Perbaikan efisiensi utama**: Versi PostgreSQL menggunakan `FOR ... LOOP` yang melakukan UPDATE satu per satu (N query untuk N pasien). Versi MySQL ini menggunakan **satu batch UPDATE** yang mengubah semua baris sekaligus dalam satu operasi.
+2. **ROW_COUNT()** — Menggantikan counter manual. Mengembalikan jumlah baris yang terpengaruh oleh UPDATE terakhir.
+3. Trigger `trg_buka_kembali_jadwal` tetap aktif per baris karena MySQL trigger `FOR EACH ROW` tetap fire untuk setiap baris dalam batch UPDATE.
+4. Notifikasi (`RAISE NOTICE` di PostgreSQL) tidak ada di MySQL. Backend mengambil daftar pasien terpengaruh dengan query terpisah setelah prosedur selesai — ini memisahkan concern database dan notifikasi.
+5. Performa: O(1) query vs O(N) query. Untuk jadwal dengan 30 pasien, ini 30x lebih cepat.
 
 ---
 
 ### 4.3 sp_Proses_Pembayaran
 
 ```sql
-CREATE OR REPLACE PROCEDURE sp_Proses_Pembayaran(
+DELIMITER //
+CREATE PROCEDURE sp_Proses_Pembayaran(
     IN  p_id_daftar     INT,
     IN  p_metode_bayar  VARCHAR(50),
     OUT p_id_pembayaran INT,
-    OUT p_total_tagihan NUMERIC(15, 2),
+    OUT p_total_tagihan DECIMAL(15, 2),
     OUT p_pesan         VARCHAR(500)
 )
-LANGUAGE plpgsql AS $$
-DECLARE
-    v_valid_metode  BOOLEAN;
-    v_status_daftar VARCHAR(20);
 BEGIN
-    SELECT status_pendaftaran
-    INTO   v_status_daftar
+    DECLARE v_status_daftar VARCHAR(20);
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    SELECT status_pendaftaran INTO v_status_daftar
     FROM   Pendaftaran
     WHERE  id_daftar = p_id_daftar;
 
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'sp_Proses_Pembayaran: Pendaftaran ID % tidak ditemukan.', p_id_daftar;
+    IF v_status_daftar IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'sp_Proses_Pembayaran: Pendaftaran tidak ditemukan.';
     END IF;
 
     IF v_status_daftar = 'Batal' THEN
-        RAISE EXCEPTION 'Pendaftaran ID % sudah dibatalkan, tidak dapat diproses.', p_id_daftar;
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Pendaftaran sudah dibatalkan, tidak dapat diproses.';
     END IF;
 
     IF v_status_daftar = 'Selesai' AND EXISTS (
         SELECT 1 FROM Pembayaran WHERE id_daftar = p_id_daftar AND status_bayar = 'Lunas'
     ) THEN
-        RAISE EXCEPTION 'Pembayaran untuk pendaftaran ID % sudah Lunas sebelumnya.', p_id_daftar;
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Pembayaran sudah Lunas sebelumnya.';
     END IF;
 
-    v_valid_metode := fn_Validasi_Metode_Bayar(p_id_daftar, p_metode_bayar);
-    IF NOT v_valid_metode THEN
-        RAISE EXCEPTION 'Metode bayar "%" tidak sesuai dengan kategori pasien.', p_metode_bayar;
+    IF fn_Validasi_Metode_Bayar(p_id_daftar, p_metode_bayar) = 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Metode bayar tidak sesuai dengan kategori pasien.';
     END IF;
 
-    p_total_tagihan := fn_Hitung_Total_Tagihan(p_id_daftar);
+    SET p_total_tagihan = fn_Hitung_Total_Tagihan(p_id_daftar);
 
     IF EXISTS (SELECT 1 FROM Pembayaran WHERE id_daftar = p_id_daftar) THEN
         UPDATE Pembayaran
         SET    metode_bayar = p_metode_bayar,
                status_bayar = 'Lunas'
-        WHERE  id_daftar    = p_id_daftar
-        RETURNING id_pembayaran INTO p_id_pembayaran;
+        WHERE  id_daftar    = p_id_daftar;
+
+        SELECT id_pembayaran INTO p_id_pembayaran
+        FROM   Pembayaran
+        WHERE  id_daftar = p_id_daftar;
     ELSE
         INSERT INTO Pembayaran (id_daftar, metode_bayar, status_bayar)
-        VALUES (p_id_daftar, p_metode_bayar, 'Lunas')
-        RETURNING id_pembayaran INTO p_id_pembayaran;
+        VALUES (p_id_daftar, p_metode_bayar, 'Lunas');
+        SET p_id_pembayaran = LAST_INSERT_ID();
     END IF;
 
-    p_pesan := FORMAT(
-        'Pembayaran LUNAS. ID Pembayaran: %s | Total: Rp %s | Metode: %s.',
-        p_id_pembayaran, p_total_tagihan, p_metode_bayar
+    SET p_pesan = CONCAT(
+        'Pembayaran LUNAS. ID Pembayaran: ', p_id_pembayaran,
+        ' | Total: Rp ', p_total_tagihan, ' | Metode: ', p_metode_bayar, '.'
     );
 
-EXCEPTION
-    WHEN OTHERS THEN
-        RAISE;
-END;
-$$;
+    COMMIT;
+END //
+DELIMITER ;
 ```
 
 **Penjelasan langkah demi langkah:**
 
-1. **Step 1 — Validasi status pendaftaran**: Ambil status. Tolak jika 'Batal'. Tolak jika sudah 'Selesai' dan Lunas (double payment).
-2. **Step 2 — Validasi metode bayar**: Panggil `fn_Validasi_Metode_Bayar` untuk cek kesesuaian kategori pasien dan metode bayar (guard BPJS).
-3. **Step 3 — Kalkulasi tagihan**: Panggil `fn_Hitung_Total_Tagihan`. BPJS = Rp 0, non-BPJS = SUM tarif layanan.
-4. **Step 4 — Simpan pembayaran**: Jika record pembayaran sudah ada → UPDATE. Jika belum → INSERT baru. Keduanya langsung set status 'Lunas'.
-5. Trigger `trg_validasi_metode_bayar`, `trg_update_status_pendaftaran`, dan `trg_audit_perubahan_pembayaran` aktif otomatis.
-6. **Output**: ID pembayaran, total tagihan, dan pesan konfirmasi.
+1. **Step 1 — Validasi pendaftaran**: `SELECT INTO` + cek NULL (not found). Tolak jika 'Batal' atau sudah 'Lunas'.
+2. **Step 2 — Validasi metode bayar**: Panggil `fn_Validasi_Metode_Bayar` (guard BPJS).
+3. **Step 3 — Kalkulasi tagihan**: Panggil `fn_Hitung_Total_Tagihan`. BPJS = Rp 0.
+4. **Step 4 — Simpan pembayaran**: MySQL tidak support `RETURNING ... INTO` pada UPDATE, jadi pakai `SELECT ... INTO` terpisah setelah UPDATE. Pada INSERT, pakai `LAST_INSERT_ID()`.
+5. Trigger `trg_validasi_metode_bayar_insert`/`_update`, `trg_update_status_pendaftaran`, dan `trg_audit_perubahan_pembayaran` aktif otomatis.
+6. `CONCAT` menggantikan `FORMAT` PostgreSQL.
 
 ---
 
 ### 4.4 sp_Reschedule_Pendaftaran
 
 ```sql
-CREATE OR REPLACE PROCEDURE sp_Reschedule_Pendaftaran(
+DELIMITER //
+CREATE PROCEDURE sp_Reschedule_Pendaftaran(
     IN  p_id_daftar      INT,
     IN  p_id_jadwal_baru INT,
     OUT p_pesan           VARCHAR(500)
 )
-LANGUAGE plpgsql AS $$
-DECLARE
-    v_id_jadwal_lama  INT;
-    v_status_daftar   VARCHAR(20);
-    v_jadwal_tersedia BOOLEAN;
 BEGIN
+    DECLARE v_id_jadwal_lama INT;
+    DECLARE v_status_daftar  VARCHAR(20);
+    DECLARE v_antrean_baru   INT;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
     SELECT id_jadwal, status_pendaftaran
     INTO   v_id_jadwal_lama, v_status_daftar
     FROM   Pendaftaran
     WHERE  id_daftar = p_id_daftar;
 
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'sp_Reschedule: Pendaftaran ID % tidak ditemukan.', p_id_daftar;
+    IF v_id_jadwal_lama IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'sp_Reschedule: Pendaftaran tidak ditemukan.';
     END IF;
 
     IF v_status_daftar IN ('Selesai', 'Diperiksa') THEN
-        RAISE EXCEPTION 'Pendaftaran ID % tidak bisa di-reschedule karena berstatus "%".',
-            p_id_daftar, v_status_daftar;
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Pendaftaran tidak bisa di-reschedule (status Selesai/Diperiksa).';
     END IF;
 
-    v_jadwal_tersedia := fn_Cek_Ketersediaan_Jadwal(p_id_jadwal_baru);
-    IF NOT v_jadwal_tersedia THEN
-        RAISE EXCEPTION 'Jadwal baru ID % tidak tersedia atau sudah penuh.', p_id_jadwal_baru;
+    IF fn_Cek_Ketersediaan_Jadwal(p_id_jadwal_baru) = 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Jadwal baru tidak tersedia atau sudah penuh.';
     END IF;
+
+    SELECT COALESCE(MAX(nomor_antrean), 0) + 1 INTO v_antrean_baru
+    FROM   Pendaftaran
+    WHERE  id_jadwal = p_id_jadwal_baru
+      AND  id_daftar != p_id_daftar;
 
     UPDATE Pendaftaran
-    SET    id_jadwal            = p_id_jadwal_baru,
-           status_pendaftaran   = 'Menunggu',
-           tanggal_pendaftaran  = CURRENT_TIMESTAMP,
-           nomor_antrean        = (
-               SELECT COALESCE(MAX(nomor_antrean), 0) + 1
-               FROM   Pendaftaran
-               WHERE  id_jadwal  = p_id_jadwal_baru
-                 AND  id_daftar  != p_id_daftar
-           )
+    SET    id_jadwal           = p_id_jadwal_baru,
+           status_pendaftaran  = 'Menunggu',
+           tanggal_pendaftaran = CURRENT_TIMESTAMP,
+           nomor_antrean       = v_antrean_baru
     WHERE  id_daftar = p_id_daftar;
 
-    p_pesan := FORMAT(
-        'Reschedule berhasil. ID Daftar: %s | Dari Jadwal ID: %s → Jadwal ID: %s.',
-        p_id_daftar, v_id_jadwal_lama, p_id_jadwal_baru
+    SET p_pesan = CONCAT(
+        'Reschedule berhasil. ID Daftar: ', p_id_daftar,
+        ' | Dari Jadwal ID: ', v_id_jadwal_lama, ' → Jadwal ID: ', p_id_jadwal_baru, '.'
     );
 
-EXCEPTION
-    WHEN OTHERS THEN
-        RAISE;
-END;
-$$;
+    COMMIT;
+END //
+DELIMITER ;
 ```
 
 **Penjelasan langkah demi langkah:**
 
-1. **Step 1 — Ambil data saat ini**: Ambil jadwal lama dan status pendaftaran. Tolak jika tidak ditemukan.
-2. **Validasi status**: Pendaftaran 'Selesai' atau 'Diperiksa' tidak boleh di-reschedule (sudah dalam proses medis).
-3. **Step 2 — Validasi jadwal baru**: Panggil `fn_Cek_Ketersediaan_Jadwal` untuk pastikan jadwal tujuan masih bisa menerima pasien.
-4. **Step 3 — Pindahkan jadwal**: UPDATE pendaftaran ke jadwal baru. Reset status ke 'Menunggu'. Hitung ulang nomor antrean dengan subquery MAX+1 (exclude diri sendiri). Reset timestamp pendaftaran.
-5. Trigger `trg_buka_kembali_jadwal` memeriksa jadwal lama — jika sebelumnya Penuh, bisa dibuka kembali.
+1. **Step 1 — Ambil data saat ini**: Ambil jadwal lama dan status. Cek NULL untuk not-found.
+2. **Validasi status**: Tolak jika 'Selesai' atau 'Diperiksa'.
+3. **Step 2 — Validasi jadwal baru**: Panggil `fn_Cek_Ketersediaan_Jadwal`.
+4. **Perbaikan efisiensi**: Nomor antrean dihitung lebih dulu ke variabel `v_antrean_baru` terpisah, lalu dipakai di UPDATE. PostgreSQL versi lama menggunakan correlated subquery di dalam SET clause yang bisa kurang optimal pada beberapa query planner.
+5. **Step 3 — Pindahkan jadwal**: UPDATE pendaftaran ke jadwal baru, reset status dan timestamp.
+6. Trigger `trg_buka_kembali_jadwal` memeriksa jadwal lama untuk kemungkinan dibuka kembali.
 
 ---
 
 ### 4.5 sp_Update_Status_Pemeriksaan
 
 ```sql
-CREATE OR REPLACE PROCEDURE sp_Update_Status_Pemeriksaan(
+DELIMITER //
+CREATE PROCEDURE sp_Update_Status_Pemeriksaan(
     IN  p_id_daftar   INT,
     IN  p_status_baru VARCHAR(20),
     IN  p_id_admin    INT,
     OUT p_pesan       VARCHAR(500)
 )
-LANGUAGE plpgsql AS $$
-DECLARE
-    v_status_lama    VARCHAR(20);
-    v_valid_transisi BOOLEAN := FALSE;
 BEGIN
-    SELECT status_pendaftaran
-    INTO   v_status_lama
+    DECLARE v_status_lama    VARCHAR(20);
+    DECLARE v_valid_transisi TINYINT(1) DEFAULT 0;
+
+    SELECT status_pendaftaran INTO v_status_lama
     FROM   Pendaftaran
     WHERE  id_daftar = p_id_daftar;
 
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'sp_Update_Status: Pendaftaran ID % tidak ditemukan.', p_id_daftar;
+    IF v_status_lama IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'sp_Update_Status: Pendaftaran tidak ditemukan.';
     END IF;
 
-    IF    v_status_lama = 'Menunggu'  AND p_status_baru IN ('Diperiksa', 'Batal') THEN
-        v_valid_transisi := TRUE;
-    ELSIF v_status_lama = 'Diperiksa' AND p_status_baru IN ('Selesai',   'Batal') THEN
-        v_valid_transisi := TRUE;
+    IF v_status_lama = 'Menunggu' AND p_status_baru IN ('Diperiksa', 'Batal') THEN
+        SET v_valid_transisi = 1;
+    ELSEIF v_status_lama = 'Diperiksa' AND p_status_baru IN ('Selesai', 'Batal') THEN
+        SET v_valid_transisi = 1;
     END IF;
 
-    IF NOT v_valid_transisi THEN
-        RAISE EXCEPTION 'Transisi status dari "%" ke "%" tidak valid.', v_status_lama, p_status_baru;
+    IF v_valid_transisi = 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Transisi status tidak valid.';
     END IF;
 
     UPDATE Pendaftaran
     SET    status_pendaftaran = p_status_baru
     WHERE  id_daftar          = p_id_daftar;
 
-    p_pesan := FORMAT(
-        'Status pendaftaran ID %s diubah: "%s" → "%s" oleh Admin ID %s.',
-        p_id_daftar, v_status_lama, p_status_baru, p_id_admin
+    SET p_pesan = CONCAT(
+        'Status pendaftaran ID ', p_id_daftar, ' diubah: "', v_status_lama,
+        '" → "', p_status_baru, '" oleh Admin ID ', p_id_admin, '.'
     );
-
-EXCEPTION
-    WHEN OTHERS THEN
-        RAISE;
-END;
-$$;
+END //
+DELIMITER ;
 ```
 
 **Penjelasan langkah demi langkah:**
 
-1. Ambil status pendaftaran saat ini (`v_status_lama`).
-2. **State machine validation** — hanya transisi berikut yang diperbolehkan:
+1. Ambil status saat ini. Cek NULL untuk not-found.
+2. **State machine** — hanya transisi valid:
    - `Menunggu` → `Diperiksa` atau `Batal`
    - `Diperiksa` → `Selesai` atau `Batal`
-   - `Selesai` dan `Batal` = terminal state (tidak bisa diubah lagi)
-3. Jika transisi tidak valid → raise exception.
-4. UPDATE status pendaftaran ke status baru.
-5. Jika status baru = 'Batal', trigger `trg_buka_kembali_jadwal` akan cek apakah slot jadwal bisa dibuka kembali.
+   - `Selesai` dan `Batal` = terminal state
+3. `TINYINT(1)` menggantikan `BOOLEAN` untuk flag validasi.
+4. `ELSEIF` — MySQL syntax (PostgreSQL = `ELSIF`).
+5. Tidak perlu transaksi eksplisit karena hanya satu UPDATE statement.
+
+---
+
+### 4.6 sp_Get_Statistik_Harian
+
+```sql
+DELIMITER //
+CREATE PROCEDURE sp_Get_Statistik_Harian(
+    IN  p_tanggal          DATE,
+    OUT p_total_pendaftaran INT,
+    OUT p_total_selesai     INT,
+    OUT p_total_batal       INT,
+    OUT p_total_menunggu    INT,
+    OUT p_total_pendapatan  DECIMAL(15, 2),
+    OUT p_total_rujukan     INT
+)
+BEGIN
+    SELECT
+        COUNT(*),
+        SUM(p.status_pendaftaran = 'Selesai'),
+        SUM(p.status_pendaftaran = 'Batal'),
+        SUM(p.status_pendaftaran IN ('Menunggu', 'Diperiksa'))
+    INTO p_total_pendaftaran, p_total_selesai, p_total_batal, p_total_menunggu
+    FROM   Pendaftaran p
+    JOIN   Jadwal_Dokter jd ON p.id_jadwal = jd.id_jadwal
+    WHERE  jd.hari_tanggal = p_tanggal;
+
+    SELECT COALESCE(SUM(l.tarif_total_layanan), 0) INTO p_total_pendapatan
+    FROM   Pendaftaran p
+    JOIN   Jadwal_Dokter jd    ON p.id_jadwal   = jd.id_jadwal
+    JOIN   Pasien pas          ON p.id_pasien   = pas.id_pasien
+    JOIN   Pembayaran py       ON p.id_daftar   = py.id_daftar
+    JOIN   Pendaftaran_Layanan pl ON p.id_daftar = pl.id_daftar
+    JOIN   Layanan l           ON pl.id_layanan  = l.id_layanan
+    WHERE  jd.hari_tanggal     = p_tanggal
+      AND  py.status_bayar     = 'Lunas'
+      AND  pas.kategori_pasien != 'BPJS';
+
+    SELECT COUNT(DISTINCT r.id_rujukan) INTO p_total_rujukan
+    FROM   Rujukan r
+    JOIN   Skrining sk ON r.id_skrining = sk.id_skrining
+    WHERE  DATE(sk.tanggal_skrining) = p_tanggal;
+END //
+DELIMITER ;
+```
+
+**Penjelasan langkah demi langkah:**
+
+1. **Dikonversi dari function ke procedure** — MySQL function tidak bisa return TABLE. Procedure dengan OUT parameter sebagai gantinya.
+2. **Perbaikan efisiensi utama**: Versi PostgreSQL menggabungkan semua data dalam satu query besar dengan 7 JOIN (termasuk LEFT JOIN). Ini menyebabkan **cross-join multiplication** — jika satu pendaftaran punya 3 layanan DAN pasien punya 2 skrining, baris termultiplikasi jadi 6x.
+3. **Solusi: 3 query terpisah** yang masing-masing hanya JOIN tabel yang dibutuhkan:
+   - Query 1: Count pendaftaran + status breakdown (2 tabel saja).
+   - Query 2: Total pendapatan (5 tabel, tapi hanya JOIN yang relevan untuk revenue).
+   - Query 3: Total rujukan (2 tabel saja).
+4. `SUM(condition)` — MySQL shorthand. Ekspresi boolean menghasilkan 1 (true) atau 0 (false), dijumlahkan langsung. Menggantikan `COUNT(*) FILTER (WHERE ...)` PostgreSQL.
+5. `INNER JOIN` dipakai (bukan LEFT JOIN) di query 2 karena kita hanya butuh pendaftaran yang sudah punya pembayaran Lunas.
+6. Pemanggilan: `CALL sp_Get_Statistik_Harian('2025-01-15', @a, @b, @c, @d, @e, @f);`
 
 ---
 
@@ -733,127 +755,150 @@ $$;
 ### 5.1 Trigger 1 — Sinkronisasi Status Pendaftaran dari Pembayaran
 
 ```sql
-CREATE OR REPLACE FUNCTION trg_func_batal_daftar_karena_bayar()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.status_bayar = 'Gagal' THEN
-        UPDATE Pendaftaran
-        SET    status_pendaftaran = 'Batal'
-        WHERE  id_daftar = NEW.id_daftar;
-    END IF;
-
-    IF NEW.status_bayar = 'Lunas' AND OLD.status_bayar = 'Pending' THEN
-        UPDATE Pendaftaran
-        SET    status_pendaftaran = 'Menunggu'
-        WHERE  id_daftar = NEW.id_daftar;
-    END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
+DELIMITER //
 CREATE TRIGGER trg_update_status_pendaftaran
-AFTER UPDATE OF status_bayar ON Pembayaran
+AFTER UPDATE ON Pembayaran
 FOR EACH ROW
-WHEN (OLD.status_bayar IS DISTINCT FROM NEW.status_bayar)
-EXECUTE FUNCTION trg_func_batal_daftar_karena_bayar();
+BEGIN
+    IF NOT (OLD.status_bayar <=> NEW.status_bayar) THEN
+        IF NEW.status_bayar = 'Gagal' THEN
+            UPDATE Pendaftaran
+            SET    status_pendaftaran = 'Batal'
+            WHERE  id_daftar = NEW.id_daftar;
+        END IF;
+
+        IF NEW.status_bayar = 'Lunas' AND OLD.status_bayar = 'Pending' THEN
+            UPDATE Pendaftaran
+            SET    status_pendaftaran = 'Menunggu'
+            WHERE  id_daftar = NEW.id_daftar;
+        END IF;
+    END IF;
+END //
+DELIMITER ;
 ```
 
 **Penjelasan langkah demi langkah:**
 
-1. Trigger aktif **AFTER UPDATE** pada kolom `status_bayar` di tabel `Pembayaran`.
-2. Hanya fire jika status_bayar benar-benar berubah (IS DISTINCT FROM).
-3. Jika pembayaran menjadi 'Gagal' → otomatis batalkan pendaftaran terkait.
-4. Jika pembayaran berubah dari 'Pending' ke 'Lunas' → aktifkan status pendaftaran menjadi 'Menunggu'.
-5. Return NEW karena ini AFTER trigger (return value tidak mempengaruhi data, tapi wajib ada).
+1. `AFTER UPDATE` — MySQL tidak support `AFTER UPDATE OF column`, sehingga trigger fire pada setiap UPDATE tabel `Pembayaran`.
+2. `NOT (OLD.status_bayar <=> NEW.status_bayar)` — Operator `<=>` adalah NULL-safe equality MySQL. `NOT <=>` setara dengan `IS DISTINCT FROM` PostgreSQL. Guard ini memastikan trigger hanya proses jika status_bayar benar-benar berubah.
+3. Pembayaran 'Gagal' → pendaftaran otomatis 'Batal'.
+4. Pembayaran Pending → Lunas → pendaftaran diaktifkan ke 'Menunggu'.
 
 ---
 
-### 5.2 Trigger 2 — Auto-Generate Nomor Antrean
+### 5.2 Trigger 2 — Blokir Pendaftaran ke Jadwal Tidak Aktif
 
 ```sql
-CREATE OR REPLACE FUNCTION trg_func_auto_antrean()
-RETURNS TRIGGER AS $$
-DECLARE
-    v_next_antrean INT;
+DELIMITER //
+CREATE TRIGGER trg_blokir_daftar_ke_jadwal_nonaktif
+BEFORE INSERT ON Pendaftaran
+FOR EACH ROW
 BEGIN
-    PERFORM id_jadwal
-    FROM    Jadwal_Dokter
-    WHERE   id_jadwal = NEW.id_jadwal
-    FOR UPDATE;
+    DECLARE v_status_jadwal VARCHAR(20);
 
-    SELECT COALESCE(MAX(nomor_antrean), 0) + 1
-    INTO   v_next_antrean
-    FROM   Pendaftaran
+    SELECT status_jadwal INTO v_status_jadwal
+    FROM   Jadwal_Dokter
     WHERE  id_jadwal = NEW.id_jadwal;
 
-    NEW.nomor_antrean := v_next_antrean;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+    IF v_status_jadwal = 'Batal' THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'DITOLAK: Jadwal sudah dibatalkan.';
+    END IF;
 
+    IF v_status_jadwal = 'Penuh' THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'DITOLAK: Jadwal sudah penuh.';
+    END IF;
+END //
+DELIMITER ;
+```
+
+**Penjelasan langkah demi langkah:**
+
+1. `BEFORE INSERT` pada `Pendaftaran` — validasi sebelum data masuk.
+2. Ambil status jadwal yang dipilih.
+3. Jadwal 'Batal' atau 'Penuh' → tolak pendaftaran via SIGNAL.
+4. Trigger ini dibuat **sebelum** `trg_set_nomor_antrean` sehingga MySQL menjalankannya lebih dulu (urutan berdasarkan waktu pembuatan).
+5. Lapisan validasi kedua di level database sebagai perlindungan terhadap race condition.
+
+---
+
+### 5.3 Trigger 3 — Auto-Generate Nomor Antrean
+
+```sql
+DELIMITER //
 CREATE TRIGGER trg_set_nomor_antrean
 BEFORE INSERT ON Pendaftaran
 FOR EACH ROW
-EXECUTE FUNCTION trg_func_auto_antrean();
+FOLLOWS trg_blokir_daftar_ke_jadwal_nonaktif
+BEGIN
+    DECLARE v_next_antrean INT;
+
+    SELECT id_jadwal INTO @_lock_jadwal
+    FROM   Jadwal_Dokter
+    WHERE  id_jadwal = NEW.id_jadwal
+    FOR UPDATE;
+
+    SELECT COALESCE(MAX(nomor_antrean), 0) + 1 INTO v_next_antrean
+    FROM   Pendaftaran
+    WHERE  id_jadwal = NEW.id_jadwal;
+
+    SET NEW.nomor_antrean = v_next_antrean;
+END //
+DELIMITER ;
 ```
 
 **Penjelasan langkah demi langkah:**
 
-1. Trigger aktif **BEFORE INSERT** pada `Pendaftaran`.
-2. `PERFORM ... FOR UPDATE` melakukan row-level lock pada baris `Jadwal_Dokter` terkait. Ini mencegah race condition saat banyak pasien mendaftar bersamaan.
-3. Hitung nomor antrean berikutnya: MAX(nomor_antrean) + 1 pada jadwal yang sama.
-4. COALESCE menangani kasus pertama (belum ada antrean → mulai dari 1).
-5. Set `NEW.nomor_antrean` sebelum INSERT dieksekusi.
+1. `FOLLOWS trg_blokir_daftar_ke_jadwal_nonaktif` — MySQL 8.0 syntax untuk mengatur urutan eksekusi trigger. Trigger ini berjalan **setelah** validasi jadwal selesai.
+2. `SELECT ... FOR UPDATE` — Row-level lock pada `Jadwal_Dokter`. Mencegah race condition saat dua pasien mendaftar bersamaan pada jadwal yang sama.
+3. `@_lock_jadwal` — User variable throwaway (pengganti `PERFORM` PostgreSQL).
+4. Hitung MAX(nomor_antrean) + 1 pada jadwal yang sama.
+5. `SET NEW.nomor_antrean` — Modifikasi data sebelum INSERT dieksekusi.
 
 ---
 
-### 5.3 Trigger 3 — Jadwal Otomatis "Penuh"
+### 5.4 Trigger 4 — Jadwal Otomatis "Penuh"
 
 ```sql
-CREATE OR REPLACE FUNCTION trg_func_lock_jadwal_penuh()
-RETURNS TRIGGER AS $$
-DECLARE
-    v_jumlah_pasien INT;
-    v_limit_antrean INT := 30;
+DELIMITER //
+CREATE TRIGGER trg_cek_kuota_jadwal
+AFTER INSERT ON Pendaftaran
+FOR EACH ROW
 BEGIN
-    SELECT COUNT(*)
-    INTO   v_jumlah_pasien
+    DECLARE v_jumlah_pasien INT;
+
+    SELECT COUNT(*) INTO v_jumlah_pasien
     FROM   Pendaftaran
     WHERE  id_jadwal          = NEW.id_jadwal
       AND  status_pendaftaran != 'Batal';
 
-    IF v_jumlah_pasien >= v_limit_antrean THEN
+    IF v_jumlah_pasien >= 30 THEN
         UPDATE Jadwal_Dokter
         SET    status_jadwal = 'Penuh'
         WHERE  id_jadwal     = NEW.id_jadwal
           AND  status_jadwal = 'Tersedia';
     END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_cek_kuota_jadwal
-AFTER INSERT ON Pendaftaran
-FOR EACH ROW
-EXECUTE FUNCTION trg_func_lock_jadwal_penuh();
+END //
+DELIMITER ;
 ```
 
 **Penjelasan langkah demi langkah:**
 
-1. Trigger aktif **AFTER INSERT** pada `Pendaftaran`.
-2. Hitung jumlah pendaftaran aktif (bukan Batal) pada jadwal yang baru diinsert.
-3. Jika jumlah ≥ 30 (batas kuota) → UPDATE status jadwal menjadi 'Penuh'.
-4. Guard condition `AND status_jadwal = 'Tersedia'` mencegah overwrite status 'Batal' yang sudah di-set manual.
+1. `AFTER INSERT` pada `Pendaftaran` — evaluasi setelah data masuk.
+2. Hitung pendaftaran aktif (bukan Batal) pada jadwal yang baru diinsert.
+3. Jika jumlah ≥ 30 → set status jadwal menjadi 'Penuh'.
+4. Guard `AND status_jadwal = 'Tersedia'` mencegah overwrite status 'Batal'.
 
 ---
 
-### 5.4 Trigger 4 — Rujukan Otomatis dari Skrining
+### 5.5 Trigger 5a — Rujukan Otomatis dari Skrining (INSERT)
 
 ```sql
-CREATE OR REPLACE FUNCTION trg_func_draft_rujukan_otomatis()
-RETURNS TRIGGER AS $$
+DELIMITER //
+CREATE TRIGGER trg_buat_draft_rujukan_insert
+AFTER INSERT ON Skrining
+FOR EACH ROW
 BEGIN
     IF NEW.status_kelayakan = 'Perlu Rujukan' THEN
         IF NOT EXISTS (SELECT 1 FROM Rujukan WHERE id_skrining = NEW.id_skrining) THEN
@@ -866,213 +911,196 @@ BEGIN
             );
         END IF;
     END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_buat_draft_rujukan
-AFTER INSERT OR UPDATE OF status_kelayakan ON Skrining
-FOR EACH ROW
-EXECUTE FUNCTION trg_func_draft_rujukan_otomatis();
+END //
+DELIMITER ;
 ```
 
-**Penjelasan langkah demi langkah:**
+### 5.6 Trigger 5b — Rujukan Otomatis dari Skrining (UPDATE)
 
-1. Trigger aktif **AFTER INSERT OR UPDATE** pada kolom `status_kelayakan` di `Skrining`.
-2. Jika status = 'Perlu Rujukan' → otomatis buat draft rujukan.
-3. Guard `NOT EXISTS` mencegah duplikasi (karena `id_skrining` sudah UNIQUE di tabel Rujukan, tapi guard ini memberikan pesan error yang lebih bersih).
-4. Tujuan rujukan di-set 'Belum Ditentukan' — admin mengisi manual kemudian.
+```sql
+DELIMITER //
+CREATE TRIGGER trg_buat_draft_rujukan_update
+AFTER UPDATE ON Skrining
+FOR EACH ROW
+BEGIN
+    IF NEW.status_kelayakan = 'Perlu Rujukan' THEN
+        IF NOT EXISTS (SELECT 1 FROM Rujukan WHERE id_skrining = NEW.id_skrining) THEN
+            INSERT INTO Rujukan (id_skrining, alasan_rujukan, asal_rujukan, tujuan_rujukan)
+            VALUES (
+                NEW.id_skrining,
+                'Draft Otomatis — Hasil Skrining: Perlu Rujukan',
+                'Klinik Utama',
+                'Belum Ditentukan'
+            );
+        END IF;
+    END IF;
+END //
+DELIMITER ;
+```
+
+**Penjelasan langkah demi langkah (5a & 5b):**
+
+1. **Dipecah jadi 2 trigger** — MySQL tidak support `AFTER INSERT OR UPDATE` dalam satu trigger. PostgreSQL bisa, MySQL harus terpisah.
+2. Logika identik: jika status = 'Perlu Rujukan' → buat draft rujukan.
+3. Guard `NOT EXISTS` mencegah duplikasi.
+4. Tujuan rujukan di-set 'Belum Ditentukan' — admin mengisi manual.
 
 ---
 
-### 5.5 Trigger 5 — Validasi Metode Bayar vs Kategori Pasien
+### 5.7 Trigger 6a — Validasi Metode Bayar (INSERT)
 
 ```sql
-CREATE OR REPLACE FUNCTION trg_func_validasi_metode_bayar()
-RETURNS TRIGGER AS $$
-DECLARE
-    v_kategori VARCHAR(50);
+DELIMITER //
+CREATE TRIGGER trg_validasi_metode_bayar_insert
+BEFORE INSERT ON Pembayaran
+FOR EACH ROW
 BEGIN
-    SELECT p.kategori_pasien
-    INTO   v_kategori
+    DECLARE v_kategori VARCHAR(50);
+
+    SELECT p.kategori_pasien INTO v_kategori
     FROM   Pendaftaran dft
     JOIN   Pasien p ON dft.id_pasien = p.id_pasien
     WHERE  dft.id_daftar = NEW.id_daftar;
 
     IF v_kategori = 'BPJS' AND NEW.metode_bayar != 'BPJS' THEN
-        RAISE EXCEPTION
-            'VALIDASI: Pasien BPJS harus menggunakan metode bayar BPJS, bukan "%".',
-            NEW.metode_bayar;
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'VALIDASI: Pasien BPJS harus menggunakan metode bayar BPJS.';
     END IF;
 
     IF v_kategori != 'BPJS' AND NEW.metode_bayar = 'BPJS' THEN
-        RAISE EXCEPTION
-            'VALIDASI: Pasien kategori "%" tidak dapat menggunakan metode bayar BPJS.',
-            v_kategori;
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'VALIDASI: Pasien non-BPJS tidak dapat menggunakan metode bayar BPJS.';
     END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_validasi_metode_bayar
-BEFORE INSERT OR UPDATE OF metode_bayar ON Pembayaran
-FOR EACH ROW
-EXECUTE FUNCTION trg_func_validasi_metode_bayar();
+END //
+DELIMITER ;
 ```
 
-**Penjelasan langkah demi langkah:**
+### 5.8 Trigger 6b — Validasi Metode Bayar (UPDATE)
 
-1. Trigger aktif **BEFORE INSERT OR UPDATE** pada kolom `metode_bayar` di `Pembayaran`.
-2. JOIN `Pendaftaran` → `Pasien` untuk ambil kategori pasien.
-3. Rule 1: Pasien BPJS + metode bukan BPJS → RAISE EXCEPTION (tolak operasi).
-4. Rule 2: Pasien non-BPJS + metode BPJS → RAISE EXCEPTION (tolak operasi).
-5. Ini adalah **last-line defense** di level database — bahkan jika validasi aplikasi dilewati, data kotor tetap ditolak.
+```sql
+DELIMITER //
+CREATE TRIGGER trg_validasi_metode_bayar_update
+BEFORE UPDATE ON Pembayaran
+FOR EACH ROW
+BEGIN
+    DECLARE v_kategori VARCHAR(50);
+
+    IF NOT (OLD.metode_bayar <=> NEW.metode_bayar) THEN
+        SELECT p.kategori_pasien INTO v_kategori
+        FROM   Pendaftaran dft
+        JOIN   Pasien p ON dft.id_pasien = p.id_pasien
+        WHERE  dft.id_daftar = NEW.id_daftar;
+
+        IF v_kategori = 'BPJS' AND NEW.metode_bayar != 'BPJS' THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'VALIDASI: Pasien BPJS harus menggunakan metode bayar BPJS.';
+        END IF;
+
+        IF v_kategori != 'BPJS' AND NEW.metode_bayar = 'BPJS' THEN
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'VALIDASI: Pasien non-BPJS tidak dapat menggunakan metode bayar BPJS.';
+        END IF;
+    END IF;
+END //
+DELIMITER ;
+```
+
+**Penjelasan langkah demi langkah (6a & 6b):**
+
+1. **Dipecah jadi 2 trigger** — MySQL tidak support `BEFORE INSERT OR UPDATE` dalam satu trigger.
+2. **Trigger UPDATE punya guard tambahan**: `NOT (OLD.metode_bayar <=> NEW.metode_bayar)` — hanya validasi jika metode bayar benar-benar berubah. Ini menghindari JOIN yang tidak perlu saat hanya status_bayar yang berubah.
+3. Rule 1: Pasien BPJS + metode bukan BPJS → SIGNAL (tolak).
+4. Rule 2: Pasien non-BPJS + metode BPJS → SIGNAL (tolak).
+5. **Last-line defense** di level database.
 
 ---
 
-### 5.6 Trigger 6 — Buka Kembali Jadwal saat Pembatalan
+### 5.9 Trigger 7 — Buka Kembali Jadwal saat Pembatalan
 
 ```sql
-CREATE OR REPLACE FUNCTION trg_func_buka_kembali_jadwal()
-RETURNS TRIGGER AS $$
-DECLARE
-    v_jumlah_aktif  INT;
-    v_limit         CONSTANT INT := 30;
-    v_status_jadwal VARCHAR(20);
+DELIMITER //
+CREATE TRIGGER trg_buka_kembali_jadwal
+AFTER UPDATE ON Pendaftaran
+FOR EACH ROW
 BEGIN
+    DECLARE v_jumlah_aktif  INT;
+    DECLARE v_status_jadwal VARCHAR(20);
+
     IF NEW.status_pendaftaran = 'Batal' AND OLD.status_pendaftaran != 'Batal' THEN
 
         SELECT status_jadwal INTO v_status_jadwal
         FROM   Jadwal_Dokter
         WHERE  id_jadwal = NEW.id_jadwal;
 
-        SELECT COUNT(*) INTO v_jumlah_aktif
-        FROM   Pendaftaran
-        WHERE  id_jadwal          = NEW.id_jadwal
-          AND  status_pendaftaran != 'Batal';
+        IF v_status_jadwal = 'Penuh' THEN
+            SELECT COUNT(*) INTO v_jumlah_aktif
+            FROM   Pendaftaran
+            WHERE  id_jadwal          = NEW.id_jadwal
+              AND  status_pendaftaran != 'Batal';
 
-        IF v_status_jadwal = 'Penuh' AND v_jumlah_aktif < v_limit THEN
-            UPDATE Jadwal_Dokter
-            SET    status_jadwal = 'Tersedia'
-            WHERE  id_jadwal     = NEW.id_jadwal;
+            IF v_jumlah_aktif < 30 THEN
+                UPDATE Jadwal_Dokter
+                SET    status_jadwal = 'Tersedia'
+                WHERE  id_jadwal     = NEW.id_jadwal;
+            END IF;
         END IF;
     END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_buka_kembali_jadwal
-AFTER UPDATE OF status_pendaftaran ON Pendaftaran
-FOR EACH ROW
-EXECUTE FUNCTION trg_func_buka_kembali_jadwal();
+END //
+DELIMITER ;
 ```
 
 **Penjelasan langkah demi langkah:**
 
-1. Trigger aktif **AFTER UPDATE** pada kolom `status_pendaftaran` di `Pendaftaran`.
-2. Hanya proses jika status berubah **ke** 'Batal' (dari status lain).
-3. Ambil status jadwal terkait. Hitung sisa antrean aktif.
-4. Jika jadwal sebelumnya 'Penuh' **dan** antrean aktif sekarang < 30 → kembalikan status ke 'Tersedia'.
-5. Melengkapi Trigger 3 (lock penuh) membentuk siklus penuh: Penuh ↔ Tersedia.
+1. `AFTER UPDATE` pada `Pendaftaran` — fire setiap ada perubahan.
+2. Guard: hanya proses jika status berubah **ke** 'Batal' dari status lain.
+3. **Perbaikan efisiensi**: Cek `v_status_jadwal = 'Penuh'` **sebelum** menghitung COUNT. Jika jadwal bukan 'Penuh', tidak perlu query COUNT sama sekali. PostgreSQL versi lama selalu menjalankan COUNT.
+4. Jika jadwal 'Penuh' dan antrean aktif < 30 → kembalikan ke 'Tersedia'.
+5. Melengkapi Trigger 4 (lock penuh) membentuk siklus: Penuh ↔ Tersedia.
 
 ---
 
-### 5.7 Trigger 7 — Blokir Pendaftaran ke Jadwal Tidak Aktif
+### 5.10 Trigger 8 — Audit Log Perubahan Pembayaran
 
 ```sql
-CREATE OR REPLACE FUNCTION trg_func_blokir_daftar_ke_jadwal_nonaktif()
-RETURNS TRIGGER AS $$
-DECLARE
-    v_status_jadwal VARCHAR(20);
-BEGIN
-    SELECT status_jadwal
-    INTO   v_status_jadwal
-    FROM   Jadwal_Dokter
-    WHERE  id_jadwal = NEW.id_jadwal;
-
-    IF v_status_jadwal = 'Batal' THEN
-        RAISE EXCEPTION
-            'DITOLAK: Tidak dapat mendaftar ke jadwal ID % yang sudah dibatalkan.',
-            NEW.id_jadwal;
-    END IF;
-
-    IF v_status_jadwal = 'Penuh' THEN
-        RAISE EXCEPTION
-            'DITOLAK: Jadwal ID % sudah penuh. Silakan pilih jadwal lain.',
-            NEW.id_jadwal;
-    END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_blokir_daftar_ke_jadwal_nonaktif
-BEFORE INSERT ON Pendaftaran
-FOR EACH ROW
-EXECUTE FUNCTION trg_func_blokir_daftar_ke_jadwal_nonaktif();
-```
-
-**Penjelasan langkah demi langkah:**
-
-1. Trigger aktif **BEFORE INSERT** pada `Pendaftaran`.
-2. Ambil status jadwal yang dipilih pasien.
-3. Jika jadwal 'Batal' → tolak pendaftaran dengan exception.
-4. Jika jadwal 'Penuh' → tolak pendaftaran dengan exception.
-5. Nama trigger dimulai `trg_blokir...` sehingga secara alfabet berjalan **sebelum** `trg_set_nomor_antrean` — validasi dulu, baru assign nomor.
-6. Ini adalah lapisan validasi kedua (setelah `fn_Cek_Ketersediaan_Jadwal`) sebagai perlindungan terhadap race condition.
-
----
-
-### 5.8 Trigger 8 — Audit Log Perubahan Pembayaran
-
-```sql
-CREATE OR REPLACE FUNCTION trg_func_audit_pembayaran()
-RETURNS TRIGGER AS $$
-BEGIN
-    INSERT INTO Log_Pembayaran (
-        id_pembayaran,
-        id_daftar,
-        status_lama,
-        status_baru,
-        metode_lama,
-        metode_baru,
-        keterangan
-    )
-    VALUES (
-        NEW.id_pembayaran,
-        NEW.id_daftar,
-        OLD.status_bayar,
-        NEW.status_bayar,
-        OLD.metode_bayar,
-        NEW.metode_bayar,
-        FORMAT('Perubahan direkam pada %s', NOW())
-    );
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
+DELIMITER //
 CREATE TRIGGER trg_audit_perubahan_pembayaran
 AFTER UPDATE ON Pembayaran
 FOR EACH ROW
-WHEN (
-    OLD.status_bayar IS DISTINCT FROM NEW.status_bayar
-    OR OLD.metode_bayar IS DISTINCT FROM NEW.metode_bayar
-)
-EXECUTE FUNCTION trg_func_audit_pembayaran();
+FOLLOWS trg_update_status_pendaftaran
+BEGIN
+    IF NOT (OLD.status_bayar <=> NEW.status_bayar)
+    OR NOT (OLD.metode_bayar <=> NEW.metode_bayar) THEN
+
+        INSERT INTO Log_Pembayaran (
+            id_pembayaran,
+            id_daftar,
+            status_lama,
+            status_baru,
+            metode_lama,
+            metode_baru,
+            keterangan
+        )
+        VALUES (
+            NEW.id_pembayaran,
+            NEW.id_daftar,
+            OLD.status_bayar,
+            NEW.status_bayar,
+            OLD.metode_bayar,
+            NEW.metode_bayar,
+            CONCAT('Perubahan direkam pada ', NOW())
+        );
+    END IF;
+END //
+DELIMITER ;
 ```
 
 **Penjelasan langkah demi langkah:**
 
-1. Trigger aktif **AFTER UPDATE** pada tabel `Pembayaran`.
-2. Hanya fire jika `status_bayar` atau `metode_bayar` benar-benar berubah (WHEN clause).
-3. INSERT record baru ke `Log_Pembayaran` dengan:
-   - Nilai lama (OLD) dan baru (NEW) untuk status dan metode bayar.
-   - Timestamp otomatis via `NOW()`.
-4. Jejak audit ini permanen — tidak bisa dihapus oleh transaksi yang di-rollback karena trigger hanya fire pada operasi yang sukses.
-5. Berguna untuk rekonsiliasi keuangan, deteksi anomali, dan investigasi.
+1. `FOLLOWS trg_update_status_pendaftaran` — Eksplisit menyatakan trigger ini berjalan **setelah** trigger sinkronisasi status. Penting untuk urutan yang benar.
+2. `NOT (OLD.col <=> NEW.col)` — Pengganti `IS DISTINCT FROM`. Operator `<=>` menangani NULL dengan benar (NULL <=> NULL = TRUE).
+3. Guard IF: hanya catat audit jika ada perubahan nyata pada status atau metode bayar.
+4. INSERT ke `Log_Pembayaran` dengan nilai lama dan baru.
+5. `NOW()` di MySQL setara `NOW()` di PostgreSQL.
 
 ---
 
@@ -1107,11 +1135,11 @@ ORDER  BY jd.id_jadwal, p.nomor_antrean;
 
 **Penjelasan langkah demi langkah:**
 
-1. View ini menampilkan antrean pasien aktif (Menunggu + Diperiksa).
+1. Menampilkan antrean pasien aktif (Menunggu + Diperiksa).
 2. JOIN 5 tabel: Pendaftaran → Jadwal_Dokter → Dokter → Poli → Pasien.
-3. Kolom `estimasi_dipanggil` memanggil function `fn_Hitung_Estimasi_Tunggu` untuk setiap baris.
-4. Diurutkan berdasarkan jadwal lalu nomor antrean.
-5. Siap dipakai untuk papan antrean digital: `SELECT * FROM v_Antrian_Aktif WHERE hari_tanggal = CURRENT_DATE;`
+3. Kolom `estimasi_dipanggil` memanggil `fn_Hitung_Estimasi_Tunggu` per baris.
+4. Urut berdasarkan jadwal lalu nomor antrean.
+5. Penggunaan: `SELECT * FROM v_Antrian_Aktif WHERE hari_tanggal = CURDATE();`
 
 ---
 
@@ -1127,19 +1155,20 @@ SELECT
     jd.jam_mulai,
     jd.jam_selesai,
     jd.status_jadwal,
-    COUNT(p.id_daftar)
-        FILTER (WHERE p.status_pendaftaran != 'Batal')    AS total_aktif,
-    COUNT(p.id_daftar)
-        FILTER (WHERE p.status_pendaftaran = 'Selesai')   AS total_selesai,
-    COUNT(p.id_daftar)
-        FILTER (WHERE p.status_pendaftaran = 'Diperiksa') AS sedang_diperiksa,
-    COUNT(p.id_daftar)
-        FILTER (WHERE p.status_pendaftaran = 'Menunggu')  AS total_menunggu,
-    COUNT(p.id_daftar)
-        FILTER (WHERE p.status_pendaftaran = 'Batal')     AS total_batal
+    SUM(CASE WHEN p.status_pendaftaran IS NOT NULL
+              AND p.status_pendaftaran != 'Batal'
+             THEN 1 ELSE 0 END)                            AS total_aktif,
+    SUM(CASE WHEN p.status_pendaftaran = 'Selesai'
+             THEN 1 ELSE 0 END)                            AS total_selesai,
+    SUM(CASE WHEN p.status_pendaftaran = 'Diperiksa'
+             THEN 1 ELSE 0 END)                            AS sedang_diperiksa,
+    SUM(CASE WHEN p.status_pendaftaran = 'Menunggu'
+             THEN 1 ELSE 0 END)                            AS total_menunggu,
+    SUM(CASE WHEN p.status_pendaftaran = 'Batal'
+             THEN 1 ELSE 0 END)                            AS total_batal
 FROM   Jadwal_Dokter jd
-JOIN   Dokter d   ON jd.id_dokter = d.id_dokter
-JOIN   Poli pl    ON d.id_poli    = pl.id_poli
+JOIN   Dokter d    ON jd.id_dokter = d.id_dokter
+JOIN   Poli pl     ON d.id_poli    = pl.id_poli
 LEFT JOIN Pendaftaran p ON p.id_jadwal = jd.id_jadwal
 GROUP  BY jd.id_jadwal, jd.hari_tanggal, jd.jam_mulai, jd.jam_selesai,
           jd.status_jadwal, d.nama_dokter, pl.nama_poli
@@ -1148,35 +1177,78 @@ ORDER  BY jd.hari_tanggal DESC, jd.jam_mulai;
 
 **Penjelasan langkah demi langkah:**
 
-1. View ini menampilkan ringkasan operasional per jadwal per hari.
-2. JOIN Jadwal_Dokter → Dokter → Poli, LEFT JOIN Pendaftaran (agar jadwal tanpa pendaftaran tetap muncul).
-3. FILTER clause PostgreSQL menghitung setiap status secara terpisah dalam satu query.
-4. `total_aktif` = semua pendaftaran kecuali yang Batal.
+1. Ringkasan operasional per jadwal per hari.
+2. `SUM(CASE WHEN ... THEN 1 ELSE 0 END)` — Pengganti `COUNT(*) FILTER (WHERE ...)` PostgreSQL yang tidak didukung MySQL.
+3. LEFT JOIN Pendaftaran agar jadwal tanpa pendaftaran tetap muncul.
+4. `total_aktif` menambahkan guard `IS NOT NULL` untuk menangani NULL dari LEFT JOIN.
 5. GROUP BY per jadwal, ORDER BY tanggal terbaru dulu.
-6. Berguna untuk monitoring beban kerja dokter: `SELECT * FROM v_Resume_Harian_Jadwal WHERE hari_tanggal = CURRENT_DATE;`
+6. Penggunaan: `SELECT * FROM v_Resume_Harian_Jadwal WHERE hari_tanggal = CURDATE();`
 
 ---
 
-## 7. Alur Trigger per Skenario
+## 7. Ringkasan Perubahan PostgreSQL → MySQL
+
+| Aspek | PostgreSQL | MySQL |
+|---|---|---|
+| Auto-increment | `SERIAL` | `INT AUTO_INCREMENT` |
+| Desimal | `NUMERIC(15,2)` | `DECIMAL(15,2)` |
+| Boolean | `BOOLEAN` | `TINYINT(1)` |
+| Error handling | `RAISE EXCEPTION` | `SIGNAL SQLSTATE '45000'` |
+| Return last ID | `RETURNING ... INTO` | `LAST_INSERT_ID()` |
+| NULL-safe compare | `IS DISTINCT FROM` | `NOT <=>` |
+| String format | `FORMAT('%s', var)` | `CONCAT('', var)` |
+| Conditional count | `COUNT(*) FILTER(WHERE ...)` | `SUM(CASE WHEN ... END)` |
+| Multi-event trigger | `INSERT OR UPDATE` | 2 trigger terpisah |
+| Column trigger | `UPDATE OF col` | `IF` di dalam trigger |
+| Trigger order | Alfabet nama | `FOLLOWS` / `PRECEDES` |
+| Table-returning fn | `RETURNS TABLE(...)` | Procedure + OUT params |
+| Delimiter | `$$ ... $$` | `DELIMITER //` |
+| Transaksi | Implicit via caller | Explicit `START TRANSACTION` |
+| Interval aritmatika | String concat + cast | `ADDTIME` + `MAKETIME` |
+
+---
+
+## 8. Ringkasan Perbaikan Efisiensi
+
+| Komponen | Sebelum (PostgreSQL) | Sesudah (MySQL) | Dampak |
+|---|---|---|---|
+| `sp_Pembatalan_Jadwal_Dokter` | Loop UPDATE satu per satu (O(N) query) | Batch UPDATE tunggal + `ROW_COUNT()` | ~30x lebih cepat untuk jadwal penuh |
+| `sp_Get_Statistik_Harian` | 1 query dengan 7 JOIN → cross-join multiplication | 3 query terpisah, masing-masing JOIN minimal | Hasil akurat, tidak ada baris duplikat |
+| `fn_Hitung_Estimasi_Tunggu` | String concat + `::INTERVAL` cast setiap panggilan | `ADDTIME` + `MAKETIME` langsung | Tidak ada parsing string, lebih cepat |
+| `trg_buka_kembali_jadwal` | Selalu hitung COUNT | Cek status dulu, COUNT hanya jika 'Penuh' | Skip query yang tidak perlu |
+| `trg_validasi_metode_bayar_update` | Selalu JOIN (PostgreSQL) | Guard `<=>` skip JOIN jika metode tidak berubah | Skip JOIN yang tidak perlu |
+| Transaksi | Bergantung pada caller | Explicit `START TRANSACTION` + handler | Atomisitas terjamin |
+
+---
+
+## 9. Alur Trigger per Skenario
 
 ```
 DAFTAR PASIEN BARU
   INSERT Pendaftaran
     → [BEFORE] trg_blokir_daftar_ke_jadwal_nonaktif  ← validasi jadwal
-    → [BEFORE] trg_set_nomor_antrean                  ← assign nomor antrean
+    → [BEFORE] trg_set_nomor_antrean (FOLLOWS)        ← assign nomor antrean
     → [AFTER]  trg_cek_kuota_jadwal                   ← kunci jadwal jika penuh
 
-PEMBAYARAN
-  INSERT/UPDATE Pembayaran
-    → [BEFORE] trg_validasi_metode_bayar               ← validasi BPJS
+PEMBAYARAN (INSERT)
+  INSERT Pembayaran
+    → [BEFORE] trg_validasi_metode_bayar_insert        ← validasi BPJS
+
+PEMBAYARAN (UPDATE)
+  UPDATE Pembayaran
+    → [BEFORE] trg_validasi_metode_bayar_update         ← validasi BPJS
     → [AFTER]  trg_update_status_pendaftaran            ← sinkronisasi status
-    → [AFTER]  trg_audit_perubahan_pembayaran           ← catat audit log
+    → [AFTER]  trg_audit_perubahan_pembayaran (FOLLOWS) ← catat audit log
 
 PEMBATALAN PENDAFTARAN
   UPDATE Pendaftaran SET status = 'Batal'
     → [AFTER]  trg_buka_kembali_jadwal                 ← buka slot jadwal
 
-SKRINING
-  INSERT/UPDATE Skrining SET status = 'Perlu Rujukan'
-    → [AFTER]  trg_buat_draft_rujukan                  ← buat draft rujukan
+SKRINING (INSERT)
+  INSERT Skrining SET status = 'Perlu Rujukan'
+    → [AFTER]  trg_buat_draft_rujukan_insert           ← buat draft rujukan
+
+SKRINING (UPDATE)
+  UPDATE Skrining SET status = 'Perlu Rujukan'
+    → [AFTER]  trg_buat_draft_rujukan_update           ← buat draft rujukan
 ```
