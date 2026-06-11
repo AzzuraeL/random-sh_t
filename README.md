@@ -1,96 +1,238 @@
-# Kumpulan Praktikum Teori Bahasa dan Automata
+# 📚 Kumpulan Praktikum Teori Bahasa dan Automata
 
-Repositori ini berisi empat program antarmuka grafis (GUI) berbasis Python yang mengimplementasikan konsep-konsep dasar dalam Teori Bahasa dan Automata, mulai dari manipulasi string dasar, analisis leksikal, hingga simulasi Finite State Machine (FSM) dan Pushdown Automaton (PDA).
+![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python&logoColor=white)
+![GUI](https://img.shields.io/badge/GUI-Tkinter-orange)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Status](https://img.shields.io/badge/Status-Completed-brightgreen)
 
-Semua program dibangun menggunakan library bawaan Python, yaitu `tkinter` untuk antarmuka pengguna grafis (GUI) dan `re` untuk pemrosesan *Regular Expression*.
+Repositori ini berisi empat program antarmuka grafis (GUI) berbasis Python yang mengimplementasikan konsep-konsep dasar dalam **Teori Bahasa dan Automata**, mulai dari manipulasi string dasar, analisis leksikal, hingga simulasi Finite State Machine (FSM) dan Pushdown Automaton (PDA).
 
----
-
-## Daftar Isi
-1. [Praktikum Dasar: Pengenal String Palindrome (`palindrom.py`)](#1-praktikum-dasar-pengenal-string-palindrome-palindrompy)
-2. [Praktikum 1: Lexical Analyzer Bahasa C (`praktikum1.py`)](#2-praktikum-1-lexical-analyzer-bahasa-c-praktikum1py)
-3. [Praktikum 2: FSM Automata Validator (`praktikum2.py`)](#3-praktikum-2-fsm-automata-validator-praktikum2py)
-4. [Praktikum 3: Simulator Mesin PDA (`praktikum3.py`)](#4-praktikum-3-simulator-mesin-pda-praktikum3py)
+> Semua program dibangun menggunakan library bawaan Python, yaitu `tkinter` untuk antarmuka pengguna grafis (GUI) dan `re` untuk pemrosesan *Regular Expression*. **Tidak diperlukan instalasi library tambahan.**
 
 ---
 
-## 1. Praktikum Dasar: Pengenal String Palindrome (`palindrom.py`)
+## 📁 Struktur Proyek
+
+```
+PRAKTIKUMOTOMATA/
+├── palindrom.py      # Pengenal String Palindrome
+├── praktikum1.py     # Lexical Analyzer Bahasa C
+├── praktikum2.py     # FSM Automata Validator
+├── praktikum3.py     # Simulator Mesin PDA
+└── README.md         # Dokumentasi proyek
+```
+
+---
+
+## 📖 Daftar Isi
+
+1. [Praktikum Dasar: Pengenal String Palindrome](#-1-praktikum-dasar-pengenal-string-palindrome)
+2. [Praktikum 1: Lexical Analyzer Bahasa C](#-2-praktikum-1-lexical-analyzer-bahasa-c)
+3. [Praktikum 2: FSM Automata Validator](#-3-praktikum-2-fsm-automata-validator)
+4. [Praktikum 3: Simulator Mesin PDA](#-4-praktikum-3-simulator-mesin-pda)
+5. [Persyaratan Sistem](#-persyaratan-sistem)
+6. [Cara Menjalankan Program](#-cara-menjalankan-program)
+7. [Lisensi](#-lisensi)
+
+---
+
+## 🔤 1. Praktikum Dasar: Pengenal String Palindrome
+
+**File:** [`palindrom.py`](palindrom.py)
 
 Program ini adalah aplikasi sederhana untuk mendeteksi apakah sebuah string yang dimasukkan oleh pengguna merupakan *palindrome* (kata atau frasa yang dibaca sama baik dari depan maupun dari belakang), dengan mengabaikan spasi dan karakter non-alfanumerik.
 
 ### Bedah Kode
-* **Import Library:**
-    Menggunakan `tkinter` untuk membangun GUI dan `messagebox` untuk menampilkan jendela peringatan jika input tidak valid.
-* **Fungsi `check_palindrome()`:**
-    * **Pembersihan Data:** Mengambil teks dari input pengguna, mengubahnya menjadi huruf kecil (`lower()`), dan menghapus semua karakter selain huruf dan angka (`isalnum()`).
-    * **Validasi:** Jika input kosong setelah dibersihkan, program memunculkan peringatan (warning).
-    * **Pengecekan Logika:** Membandingkan string yang sudah dibersihkan dengan versi terbaliknya (`cleaned_text[::-1]`). Hasilnya (Palindrome / Bukan) ditampilkan dengan perubahan warna teks pada label.
-* **Blok GUI (Antarmuka):**
-    Menginisialisasi *window* utama (`root`), mengatur ukuran (`geometry`), dan merangkai widget seperti `Label` (judul & instruksi), `Entry` (kolom input teks), dan `Button` (tombol eksekusi yang memanggil `check_palindrome`).
+
+| Komponen | Deskripsi |
+|----------|-----------|
+| **Import Library** | Menggunakan `tkinter` untuk GUI dan `messagebox` untuk peringatan input tidak valid. |
+| **`check_palindrome()`** | Membersihkan input (`lower()` + `isalnum()`), memvalidasi apakah kosong, lalu membandingkan string dengan versi terbaliknya (`[::-1]`). |
+| **Blok GUI** | Menginisialisasi window utama, mengatur ukuran (`450x250`), dan menyusun widget `Label`, `Entry`, dan `Button`. |
+
+### Contoh Penggunaan
+
+| Input | Output | Keterangan |
+|-------|--------|------------|
+| `katak` | ✅ Palindrome | Dibaca sama dari depan & belakang |
+| `A man a plan a canal Panama` | ✅ Palindrome | Mengabaikan spasi & huruf besar/kecil |
+| `hello` | ❌ Bukan Palindrome | Tidak simetris |
 
 ---
 
-## 2. Praktikum 1: Lexical Analyzer Bahasa C (`praktikum1.py`)
+## 🔍 2. Praktikum 1: Lexical Analyzer Bahasa C
 
-Program ini merupakan **Lexical Analyzer** (Scanner) sederhana untuk kode sumber berbahasa C. Program akan membaca input berupa blok kode C dan memecahnya menjadi token-token, lalu mengelompokkannya ke dalam empat kategori: *Reserve words*, Simbol/tanda baca, Variabel, dan Kalimat matematika (fungsi/operator/angka).
+**File:** [`praktikum1.py`](praktikum1.py)
+
+Program ini merupakan **Lexical Analyzer** (Scanner) sederhana untuk kode sumber berbahasa C. Program akan membaca input berupa blok kode C dan memecahnya menjadi token-token, lalu mengelompokkannya ke dalam empat kategori:
+
+- **Reserve words** — kata kunci bawaan bahasa C
+- **Simbol dan tanda baca** — `{`, `}`, `(`, `)`, `;`, dll.
+- **Variabel** — identifier yang bukan keyword
+- **Kalimat matematika** — fungsi, operator, dan angka
 
 ### Bedah Kode
-* **Import Library & Inisialisasi Class:**
-    Menggunakan `re` untuk *Regular Expression*. Program dibungkus dalam *class* `LexicalAnalyzerApp` untuk modularitas dan manajemen status GUI.
-* **Metode `tokenize_c(self, code)` (Core Logic):**
-    * **Definisi Keywords & Regex:** Menyimpan daftar kata kunci bahasa C dalam struktur data `set`. Mendefinisikan `token_specification` yang berisi pola Regex untuk Komentar, Fungsi, Angka, Kata (Word), Operator, Simbol, dan String.
-    * **Proses *Scanning*:** Menggabungkan semua pola Regex dan menggunakan `re.finditer` untuk menelusuri teks.
-    * **Pengelompokan (Categorization):** Melalui perulangan, token yang cocok diseleksi:
-        * `FUNGSI` atau `WORD` yang ada di dalam *keywords* masuk ke grup "Reserve words". Jika tidak, masuk ke grup "Variabel" atau "Kalimat matematika" (jika berupa fungsi).
-        * `SYMBOL` dikelompokkan ke "Simbol dan tanda baca".
-        * `NUMBER` dan `OPERATOR` dikelompokkan ke "Kalimat matematika".
-* **Metode `display_results(self, tokens)`:**
-    Memformat dan mencetak isi struktur data hasil (dictionary) ke dalam widget `Text` output pada GUI.
-* **Metode GUI (Clear & Analyze):** Menghubungkan tombol di antarmuka dengan fungsi logika utama.
+
+| Komponen | Deskripsi |
+|----------|-----------|
+| **Import & Class** | Menggunakan `re` untuk Regex. Dibungkus dalam class `LexicalAnalyzerApp`. |
+| **`tokenize_c()`** | Mendefinisikan 32+ C keywords dan pola Regex (Komentar, Fungsi, Angka, Word, Operator, Simbol, String). Menggunakan `re.finditer` untuk scanning. |
+| **Categorization** | Token dikelompokkan: keyword → Reserve words, identifier → Variabel, fungsi → Kalimat matematika, dll. |
+| **`display_results()`** | Memformat hasil ke widget `Text` output. |
+
+### Contoh Penggunaan
+
+**Input:**
+```c
+int main() {
+    int x = 10;
+    printf("Hello");
+    return 0;
+}
+```
+
+**Output:**
+```
+a. Reserve words
+ -> int, printf, return
+
+b. Simbol dan tanda baca
+ -> (, ), ,, ;, {, }
+
+c. Variabel
+ -> x
+
+d. Kalimat matematika (persamaan, fungsi, dsb)
+ -> 0, 10, =, main()
+```
 
 ---
 
-## 3. Praktikum 2: FSM Automata Validator (`praktikum2.py`)
+## ⚙️ 3. Praktikum 2: FSM Automata Validator
 
-Program ini mensimulasikan **Finite State Machine (FSM)** yang dirancang untuk mengevaluasi apakah sebuah string yang terdiri dari karakter '0' dan '1' diterima atau ditolak berdasarkan aturan spesifik:
-* Hanya boleh berisi `0` dan `1`.
-* Harus diakhiri dengan `1`.
-* Tidak boleh mengandung *substring* `00`.
+**File:** [`praktikum2.py`](praktikum2.py)
+
+Program ini mensimulasikan **Finite State Machine (FSM)** yang dirancang untuk mengevaluasi apakah sebuah string biner diterima atau ditolak berdasarkan aturan berikut:
+
+| Aturan | Deskripsi |
+|--------|-----------|
+| Alfabet | Hanya boleh berisi `0` dan `1` |
+| Akhiran | Harus diakhiri dengan `1` |
+| Substring | Tidak boleh mengandung substring `00` |
+
+### Diagram State FSM
+
+```mermaid
+stateDiagram-v2
+    [*] --> S
+    S --> A : 0
+    S --> B : 1
+    A --> C : 0
+    A --> B : 1
+    B --> A : 0
+    B --> B : 1
+    C --> C : 0
+    C --> C : 1
+    B --> [*]
+```
 
 ### Bedah Kode
-* **Class `FSM` (Logika Automata):**
-    * `__init__`: Mendefinisikan konfigurasi FSM yang terdiri dari State Awal (`S`), Final State (`B`), dan tabel transisi antar state (`S`, `A`, `B`, `C`). State `C` bertindak sebagai *dead state* atau *trap state* (ketika mendeteksi '00').
-    * `evaluate`: Membaca karakter satu per satu. Jika input bukan '0' atau '1', langsung ditolak. Mengubah *current state* berdasarkan *transitions rule*. Di akhir iterasi, jika state berada di `B`, maka string diterima (*Accepted*). Jika tidak, ditolak beserta alasan penolakannya.
-* **Class `FSMApp` (Antarmuka):**
-    Membungkus GUI menggunakan `tkinter`. Menggunakan `StringVar` agar input dapat dibaca secara dinamis, serta melakukan *binding* tombol `<Return>` (Enter) pada keyboard agar pengguna dapat mengevaluasi tanpa harus mengklik tombol. Hasilnya (VALID/INVALID) ditampilkan secara instan.
+
+| Komponen | Deskripsi |
+|----------|-----------|
+| **Class `FSM`** | Mendefinisikan State Awal (`S`), Final State (`B`), dan tabel transisi 4 state. State `C` adalah *dead/trap state* (mendeteksi `00`). |
+| **`evaluate()`** | Membaca karakter satu per satu, mengubah state berdasarkan transisi. Di akhir: state `B` = Accepted, selainnya = Rejected + alasan. |
+| **Class `FSMApp`** | GUI dengan `StringVar` untuk input dinamis dan binding `<Return>` untuk evaluasi via keyboard. |
+
+### Contoh Penggunaan
+
+| Input | Status | Alasan |
+|-------|--------|--------|
+| `1` | ✅ VALID | Berakhir di state B |
+| `101` | ✅ VALID | Tidak ada `00`, berakhir di `1` |
+| `100` | ❌ INVALID | Mengandung substring `00` |
+| `10` | ❌ INVALID | Tidak berakhir dengan `1` |
+| `abc` | ❌ INVALID | Karakter tidak valid |
 
 ---
 
-## 4. Praktikum 3: Simulator Mesin PDA (`praktikum3.py`)
+## 📦 4. Praktikum 3: Simulator Mesin PDA
 
-Aplikasi ini adalah simulator **Pushdown Automaton (PDA)**. Program ini memvalidasi bahasa formal matematika sederhana, yaitu $L = \{a^n b^n \mid n \ge 0\}$. Artinya, program memastikan jumlah karakter `a` sama persis dengan jumlah karakter `b`, dan semua karakter `a` harus muncul mendahului karakter `b` (contoh: `ab`, `aabb`, `aaabbb`).
+**File:** [`praktikum3.py`](praktikum3.py)
+
+Aplikasi ini adalah simulator **Pushdown Automaton (PDA)** yang memvalidasi bahasa formal:
+
+$$L = \{a^n b^n \mid n \ge 0\}$$
+
+Artinya, program memastikan jumlah karakter `a` sama persis dengan jumlah karakter `b`, dan semua `a` harus muncul sebelum semua `b`.
 
 ### Bedah Kode
-* **Class `PDA` (Logika Automata Berbasis Stack):**
-    * Mendefinisikan memori *Stack* menggunakan struktur data `list` Python (`self.stack = []`).
-    * `process_string`: Iterasi setiap karakter dari input dengan dua buah State (`q0` dan `q1`).
-        * **State `q0`:** Digunakan untuk membaca awalan. Setiap mendapat input `a`, program melakukan *Push* (menambahkan karakter 'A' ke dalam tumpukan). Jika mendapat input `b`, program langsung melakukan *Pop* (mengeluarkan isi tumpukan) dan pindah ke state `q1`.
-        * **State `q1`:** Digunakan untuk mencocokkan sisa string. Hanya menerima input `b` yang memicu aksi *Pop*. Jika tumpukan sudah kosong sebelum string habis, atau ada karakter selain `a` dan `b`, langsung kembalikan `False`.
-    * Di akhir iterasi, string diterima (*Accepted*) jika seluruh karakter sudah terbaca dan tumpukan (*Stack*) benar-benar kosong (`len(self.stack) == 0`).
-* **Class `PDAApp` (Antarmuka):**
-    Menyediakan GUI berbasis `tkinter` yang menginstansiasi objek `PDA`. Mengambil input pengguna lewat widget `Entry`, memasukkannya ke fungsi evaluasi, dan mengubah label di bawahnya menjadi warna hijau jika statusnya **ACCEPTED**, atau merah jika **REJECTED**.
+
+| Komponen | Deskripsi |
+|----------|-----------|
+| **Class `PDA`** | Menggunakan `list` Python sebagai Stack (`self.stack = []`). |
+| **State `q0`** | Membaca awalan: `a` → Push `'A'` ke stack, `b` → Pop dari stack & pindah ke `q1`. |
+| **State `q1`** | Mencocokkan sisa: hanya menerima `b` yang memicu Pop. Stack kosong sebelum string habis → `False`. |
+| **Acceptance** | String diterima jika seluruh karakter terbaca **dan** stack kosong (`len(self.stack) == 0`). |
+
+### Contoh Penggunaan
+
+| Input | Status | Keterangan |
+|-------|--------|------------|
+| *(kosong)* | ✅ ACCEPTED | n = 0 valid |
+| `ab` | ✅ ACCEPTED | a¹b¹ |
+| `aabb` | ✅ ACCEPTED | a²b² |
+| `aaabbb` | ✅ ACCEPTED | a³b³ |
+| `aab` | ❌ REJECTED | Jumlah `a` ≠ jumlah `b` |
+| `ba` | ❌ REJECTED | Urutan salah |
+| `abab` | ❌ REJECTED | `a` tidak mendahului semua `b` |
 
 ---
 
-## Persyaratan Sistem (Requirements)
-* **Python 3.x** atau lebih baru.
-* Modul `tkinter` (biasanya sudah terinstal secara default pada distribusi Python standar).
+## 💻 Persyaratan Sistem
 
-## Cara Menjalankan Program
-Buka terminal (Command Prompt / PowerShell / Bash) pada direktori tempat file Python disimpan, lalu jalankan perintah berikut untuk masing-masing program:
+| Komponen | Versi |
+|----------|-------|
+| **Python** | 3.x atau lebih baru |
+| **Tkinter** | Sudah terinstal default pada distribusi Python standar |
+| **OS** | Windows / macOS / Linux |
+
+> [!NOTE]
+> Tidak memerlukan instalasi package tambahan (`pip install` tidak diperlukan).
+
+---
+
+## 🚀 Cara Menjalankan Program
+
+1. Pastikan Python 3.x sudah terinstal di sistem Anda.
+2. Buka terminal (Command Prompt / PowerShell / Bash) pada direktori proyek.
+3. Jalankan salah satu perintah berikut:
 
 ```bash
+# Praktikum Dasar - Palindrome Checker
 python palindrom.py
+
+# Praktikum 1 - Lexical Analyzer
 python praktikum1.py
+
+# Praktikum 2 - FSM Validator
 python praktikum2.py
+
+# Praktikum 3 - PDA Simulator
 python praktikum3.py
+```
+
+> [!TIP]
+> Pada beberapa sistem, gunakan `python3` sebagai pengganti `python` jika versi default Python adalah 2.x.
+
+---
+
+## 📄 Lisensi
+
+Proyek ini dibuat untuk keperluan pembelajaran mata kuliah **Teori Bahasa dan Automata**. Silakan digunakan sebagai referensi belajar.
+
+---
+
+<p align="center">
+  Dibuat dengan ❤️ untuk Praktikum Teori Bahasa dan Automata
+</p>
