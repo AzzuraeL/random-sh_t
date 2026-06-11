@@ -2,7 +2,6 @@
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python&logoColor=white)
 ![GUI](https://img.shields.io/badge/GUI-Tkinter-orange)
-![License](https://img.shields.io/badge/License-MIT-green)
 ![Status](https://img.shields.io/badge/Status-Completed-brightgreen)
 
 Repositori ini berisi empat program antarmuka grafis (GUI) berbasis Python yang mengimplementasikan konsep-konsep dasar dalam **Teori Bahasa dan Automata**, mulai dari manipulasi string dasar, analisis leksikal, hingga simulasi Finite State Machine (FSM) dan Pushdown Automaton (PDA).
@@ -120,21 +119,12 @@ Program ini mensimulasikan **Finite State Machine (FSM)** yang dirancang untuk m
 | Akhiran | Harus diakhiri dengan `1` |
 | Substring | Tidak boleh mengandung substring `00` |
 
+L = { x ∈ (0 + 1)+ | dengan karakter terakhir pada string x adalah 1 dan x tidak memiliki substring 00 }
+
 ### Diagram State FSM
 
-```mermaid
-stateDiagram-v2
-    [*] --> S
-    S --> A : 0
-    S --> B : 1
-    A --> C : 0
-    A --> B : 1
-    B --> A : 0
-    B --> B : 1
-    C --> C : 0
-    C --> C : 1
-    B --> [*]
-```
+<img width="406" height="187" alt="image" src="https://github.com/user-attachments/assets/0757e0c2-5f4c-4274-9838-0b6a435caf83" />
+
 
 ### Kode
 
