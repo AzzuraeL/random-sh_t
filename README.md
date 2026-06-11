@@ -1,4 +1,4 @@
-# 📚 Kumpulan Praktikum Teori Bahasa dan Automata
+# Kumpulan Praktikum Teori Bahasa dan Automata
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python&logoColor=white)
 ![GUI](https://img.shields.io/badge/GUI-Tkinter-orange)
@@ -11,7 +11,7 @@ Repositori ini berisi empat program antarmuka grafis (GUI) berbasis Python yang 
 
 ---
 
-## 📁 Struktur Proyek
+## Struktur Proyek
 
 ```
 PRAKTIKUMOTOMATA/
@@ -24,7 +24,7 @@ PRAKTIKUMOTOMATA/
 
 ---
 
-## 📖 Daftar Isi
+## Daftar Isi
 
 1. [Praktikum Dasar: Pengenal String Palindrome](#-1-praktikum-dasar-pengenal-string-palindrome)
 2. [Praktikum 1: Lexical Analyzer Bahasa C](#-2-praktikum-1-lexical-analyzer-bahasa-c)
@@ -36,13 +36,13 @@ PRAKTIKUMOTOMATA/
 
 ---
 
-## 🔤 1. Praktikum Dasar: Pengenal String Palindrome
+## 1. Praktikum Dasar: Pengenal String Palindrome
 
 **File:** [`palindrom.py`](palindrom.py)
 
 Program ini adalah aplikasi sederhana untuk mendeteksi apakah sebuah string yang dimasukkan oleh pengguna merupakan *palindrome* (kata atau frasa yang dibaca sama baik dari depan maupun dari belakang), dengan mengabaikan spasi dan karakter non-alfanumerik.
 
-### Bedah Kode
+### Kode
 
 | Komponen | Deskripsi |
 |----------|-----------|
@@ -54,13 +54,13 @@ Program ini adalah aplikasi sederhana untuk mendeteksi apakah sebuah string yang
 
 | Input | Output | Keterangan |
 |-------|--------|------------|
-| `katak` | ✅ Palindrome | Dibaca sama dari depan & belakang |
-| `A man a plan a canal Panama` | ✅ Palindrome | Mengabaikan spasi & huruf besar/kecil |
-| `hello` | ❌ Bukan Palindrome | Tidak simetris |
+| `katak` | Palindrome | Dibaca sama dari depan & belakang |
+| `A man a plan a canal Panama` | Palindrome | Mengabaikan spasi & huruf besar/kecil |
+| `hello` | Bukan Palindrome | Tidak simetris |
 
 ---
 
-## 🔍 2. Praktikum 1: Lexical Analyzer Bahasa C
+## 2. Praktikum 1: Lexical Analyzer Bahasa C
 
 **File:** [`praktikum1.py`](praktikum1.py)
 
@@ -71,7 +71,7 @@ Program ini merupakan **Lexical Analyzer** (Scanner) sederhana untuk kode sumber
 - **Variabel** — identifier yang bukan keyword
 - **Kalimat matematika** — fungsi, operator, dan angka
 
-### Bedah Kode
+### Kode
 
 | Komponen | Deskripsi |
 |----------|-----------|
@@ -108,7 +108,7 @@ d. Kalimat matematika (persamaan, fungsi, dsb)
 
 ---
 
-## ⚙️ 3. Praktikum 2: FSM Automata Validator
+## 3. Praktikum 2: FSM Automata Validator
 
 **File:** [`praktikum2.py`](praktikum2.py)
 
@@ -136,7 +136,7 @@ stateDiagram-v2
     B --> [*]
 ```
 
-### Bedah Kode
+### Kode
 
 | Komponen | Deskripsi |
 |----------|-----------|
@@ -148,15 +148,15 @@ stateDiagram-v2
 
 | Input | Status | Alasan |
 |-------|--------|--------|
-| `1` | ✅ VALID | Berakhir di state B |
-| `101` | ✅ VALID | Tidak ada `00`, berakhir di `1` |
-| `100` | ❌ INVALID | Mengandung substring `00` |
-| `10` | ❌ INVALID | Tidak berakhir dengan `1` |
-| `abc` | ❌ INVALID | Karakter tidak valid |
+| `1` | VALID | Berakhir di state B |
+| `101` | VALID | Tidak ada `00`, berakhir di `1` |
+| `100` | INVALID | Mengandung substring `00` |
+| `10` | INVALID | Tidak berakhir dengan `1` |
+| `abc` | INVALID | Karakter tidak valid |
 
 ---
 
-## 📦 4. Praktikum 3: Simulator Mesin PDA
+## 4. Praktikum 3: Simulator Mesin PDA
 
 **File:** [`praktikum3.py`](praktikum3.py)
 
@@ -166,7 +166,7 @@ $$L = \{a^n b^n \mid n \ge 0\}$$
 
 Artinya, program memastikan jumlah karakter `a` sama persis dengan jumlah karakter `b`, dan semua `a` harus muncul sebelum semua `b`.
 
-### Bedah Kode
+### Kode
 
 | Komponen | Deskripsi |
 |----------|-----------|
@@ -179,17 +179,17 @@ Artinya, program memastikan jumlah karakter `a` sama persis dengan jumlah karakt
 
 | Input | Status | Keterangan |
 |-------|--------|------------|
-| *(kosong)* | ✅ ACCEPTED | n = 0 valid |
-| `ab` | ✅ ACCEPTED | a¹b¹ |
-| `aabb` | ✅ ACCEPTED | a²b² |
-| `aaabbb` | ✅ ACCEPTED | a³b³ |
-| `aab` | ❌ REJECTED | Jumlah `a` ≠ jumlah `b` |
-| `ba` | ❌ REJECTED | Urutan salah |
-| `abab` | ❌ REJECTED | `a` tidak mendahului semua `b` |
+| *(kosong)* | ACCEPTED | n = 0 valid |
+| `ab` | ACCEPTED | a¹b¹ |
+| `aabb` | ACCEPTED | a²b² |
+| `aaabbb` | ACCEPTED | a³b³ |
+| `aab` | REJECTED | Jumlah `a` ≠ jumlah `b` |
+| `ba` | REJECTED | Urutan salah |
+| `abab` | REJECTED | `a` tidak mendahului semua `b` |
 
 ---
 
-## 💻 Persyaratan Sistem
+## Persyaratan Sistem
 
 | Komponen | Versi |
 |----------|-------|
@@ -202,7 +202,7 @@ Artinya, program memastikan jumlah karakter `a` sama persis dengan jumlah karakt
 
 ---
 
-## 🚀 Cara Menjalankan Program
+## Cara Menjalankan Program
 
 1. Pastikan Python 3.x sudah terinstal di sistem Anda.
 2. Buka terminal (Command Prompt / PowerShell / Bash) pada direktori proyek.
@@ -221,18 +221,3 @@ python praktikum2.py
 # Praktikum 3 - PDA Simulator
 python praktikum3.py
 ```
-
-> [!TIP]
-> Pada beberapa sistem, gunakan `python3` sebagai pengganti `python` jika versi default Python adalah 2.x.
-
----
-
-## 📄 Lisensi
-
-Proyek ini dibuat untuk keperluan pembelajaran mata kuliah **Teori Bahasa dan Automata**. Silakan digunakan sebagai referensi belajar.
-
----
-
-<p align="center">
-  Dibuat dengan ❤️ untuk Praktikum Teori Bahasa dan Automata
-</p>
