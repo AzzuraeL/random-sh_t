@@ -119,7 +119,7 @@ Program ini mensimulasikan **Finite State Machine (FSM)** yang dirancang untuk m
 | Akhiran | Harus diakhiri dengan `1` |
 | Substring | Tidak boleh mengandung substring `00` |
 
-L = { x ∈ (0 + 1)+ | dengan karakter terakhir pada string x adalah 1 dan x tidak memiliki substring 00 }
+$$L = \{ x \in (0 + 1)^+ \mid \text{karakter terakhir pada string } x \text{ adalah } 1 \text{ dan } x \text{ tidak memiliki substring } 00 \}$$
 
 ### Diagram State FSM
 
